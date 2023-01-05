@@ -12,3 +12,13 @@ cd ./quickjs-master
 cp ./quickjs.h ../../quickjs.h
 cp ./quickjs-libc.h ../../quickjs-libc.h
 
+make
+cp ./libquickjs.a ../../libquickjs.a
+
+cd ../
+
+rm -rf ./quickjs-master
+
+cd ../
+
+go install
