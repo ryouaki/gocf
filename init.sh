@@ -22,3 +22,6 @@ rm -rf ./quickjs-master
 cd ../
 
 go install
+
+
+# go env -w CGO_ENABLED=1
