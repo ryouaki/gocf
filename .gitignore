@@ -5,6 +5,8 @@
 *.so
 *.dylib
 
+pkgs/quickjs-master/*
+
 # Test binary, built with `go test -c`
 *.test
 
