@@ -2,24 +2,28 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
 
 	"github.com/ryouaki/gocf/core"
-	"github.com/ryouaki/koa"
 )
 
 func init() {
-	core.InitGoCloudFunc()
+
 }
 
 func main() {
-	app := koa.New()
-
-	app.Get("/", func(ctx *koa.Context, next koa.Next) {
-
-	})
-
-	err := app.Run(8080)
+	f, err := os.OpenFile("./demo/main.js", os.O_RDONLY, 0666)
 	if err != nil {
-		fmt.Println("Server Failed:", err)
+		fmt.Println("Read Script Failed:", err)
+		f.Close()
+		return
 	}
+
+	data, err1 := ioutil.ReadAll(f)
+	if err1 != nil {
+		fmt.Println("Read Script Failed:", err1)
+	}
+
+	core.InitGoCloudFunc(string(data))
 }
