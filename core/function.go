@@ -5,7 +5,7 @@ package core
 */
 import "C"
 
-type JSGoFuncHandler func(args []*JSValue, this *JSValue) (*JSValue, *JSError)
+type JSGoFuncHandler func(args []*JSValue, this *JSValue) (*JSValue, *JSValue)
 
 type JSGoFunc struct {
 	p   C.JSValue
