@@ -2,11 +2,13 @@ package core
 
 /*
 #cgo CFLAGS: -I.
-#cgo LDFLAGS: -L. -lquickjs
+#cgo LDFLAGS: -L../ -lquickjs
 #include "./invoke.h";
 */
 import "C"
 import "unsafe"
+
+var ctxCache = make(map[*C.JSContext]*JSContext)
 
 type JSContext struct {
 	p          *C.JSContext
@@ -23,6 +25,8 @@ func (rt *JSRuntime) NewContext() *JSContext {
 	// 调用go的api
 	ret.invokeFunc = C.JS_NewCFunction(ret.p, (*C.JSCFunction)(unsafe.Pointer(C.Invoke)), nil, C.int(5))
 	ret.global = NewValue(ret, C.JS_GetGlobalObject(ret.p)) // 全局对象句柄，用于挂载api
+
+	ctxCache[ret.p] = ret
 	return ret
 }
 
@@ -38,12 +42,23 @@ func (ctx *JSContext) Eval(script string, filename string) (*JSValue, *JSValue) 
 		p:   C.JS_Eval(ctx.p, jsStr, jsStrLen, jsFileName, C.int(0)),
 		ctx: ctx,
 	}
+
+	err := ctx.GetException()
+	if err != nil {
+		return nil, err
+	}
+	return ret, nil
+}
+
+func (ctx *JSContext) GetException() *JSValue {
 	err := C.JS_GetException(ctx.p)
-	defer C.JS_FreeValue(ctx.p, err)
 	if C.JS_IsNull(err) == 1 {
-		return ret, nil
-	} else {
-		return nil, NewError(ctx, err)
+		return nil
+	}
+	return &JSValue{
+		ctx: ctx,
+		p:   err,
+		is:  IS_ERROR,
 	}
 }
 
@@ -61,5 +76,9 @@ func (ctx *JSContext) FreeValue(val *JSValue) {
 func (ctx *JSContext) Free() {
 	ctx.FreeJSValue(ctx.invokeFunc)
 	ctx.global.Free()
+	_, key := ctxCache[ctx.p]
+	if key {
+		delete(ctxCache, ctx.p)
+	}
 	C.JS_FreeContext(ctx.p)
 }
