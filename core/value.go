@@ -55,6 +55,10 @@ func (val *JSValue) GetProperty(key string) *JSValue {
 	}
 }
 
+func (val *JSValue) SetPropertyByIndex(idx int, v *JSValue) {
+	C.JS_SetPropertyInt64(val.ctx.p, val.p, C.int64_t(idx), v.p)
+}
+
 func (val *JSValue) GetPropertyByIndex(idx int) *JSValue {
 	return &JSValue{
 		ctx: val.ctx,
