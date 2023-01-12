@@ -43,10 +43,3 @@ func NewJSGoFunc(ctx *JSContext, fb JSGoFuncHandler) *JSGoFunc {
 
 	return jsGoFunc
 }
-
-func (fb *JSGoFunc) Export(name string) {
-	fb.ctx.global.SetProperty(name, &JSValue{
-		ctx: fb.ctx,
-		p:   fb.p,
-	})
-}

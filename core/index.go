@@ -24,9 +24,9 @@ func InitGoCloudFunc(script string) {
 		fmt.Println("Invoke")
 		return nil, nil
 	})
-	fb.Export("test")
+	ctx.ExportFunc("test", fb)
 	ret, _ := ctx.Eval(script, "main.js")
-	// fmt.Println(C.GoString(C.JS_ToCString(ctx.p, err.p)), err)
+	fmt.Println(C.GoString(C.JS_ToCString(ctx.p, ret.p)))
 
 	ret.Free()
 	ctx.Free()

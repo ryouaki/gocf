@@ -62,6 +62,17 @@ func (ctx *JSContext) GetException() *JSValue {
 	}
 }
 
+func (ctx *JSContext) ExportValue(name string, val *JSValue) {
+	ctx.global.SetProperty(name, val)
+}
+
+func (ctx *JSContext) ExportFunc(name string, fb *JSGoFunc) {
+	ctx.global.SetProperty(name, &JSValue{
+		ctx: fb.ctx,
+		p:   fb.p,
+	})
+}
+
 // 释放JS引擎内变量空间
 func (ctx *JSContext) FreeJSValue(val C.JSValue) {
 	C.JS_FreeValue(ctx.p, val)
