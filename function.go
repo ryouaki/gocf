@@ -1,10 +1,10 @@
-package core
+package gocf
 
 /*
 #cgo CFLAGS: -I.
 #cgo LDFLAGS: -L../ -lquickjs
 
-#include "./../quickjs-libc.h";
+#include "./quickjs-libc.h"
 */
 import "C"
 

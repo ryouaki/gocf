@@ -1,14 +1,16 @@
-package core
+package gocf
 
 /*
 #cgo CFLAGS: -I.
-#cgo LDFLAGS: -L../ -lquickjs
+#cgo LDFLAGS: -L./ -lquickjs
 
-#include "./../quickjs-libc.h";
+#include "./quickjs-libc.h"
 #include "./invoke.h"
 */
 import "C"
 import "fmt"
+
+var pluginMap = make(map[string]JSGoFuncHandler)
 
 func InitGoCloudFunc(script string) {
 	rt := NewRuntime()
@@ -33,4 +35,8 @@ func InitGoCloudFunc(script string) {
 	rt.Free()
 
 	// C.Invoke(nil, C.JSValue{}, C.int(0), nil)
+}
+
+func RegistPlugin(name string, fb JSGoFuncHandler) error {
+	return nil
 }

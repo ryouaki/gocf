@@ -1,9 +1,9 @@
-package core
+package gocf
 
 /*
 #cgo CFLAGS: -I.
 #cgo LDFLAGS: -L../ -lquickjs
-#include "./invoke.h";
+#include "./invoke.h"
 */
 import "C"
 import "unsafe"

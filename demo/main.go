@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/ryouaki/gocf/core"
+	"github.com/ryouaki/gocf"
 )
 
 func init() {
@@ -13,7 +13,7 @@ func init() {
 }
 
 func main() {
-	f, err := os.OpenFile("./demo/main.js", os.O_RDONLY, 0666)
+	f, err := os.OpenFile("./main.js", os.O_RDONLY, 0666)
 	if err != nil {
 		fmt.Println("Read Script Failed:", err)
 		f.Close()
@@ -25,5 +25,5 @@ func main() {
 		fmt.Println("Read Script Failed:", err1)
 	}
 
-	core.InitGoCloudFunc(string(data))
+	gocf.InitGoCloudFunc(string(data))
 }

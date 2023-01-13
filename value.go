@@ -1,10 +1,10 @@
-package core
+package gocf
 
 /*
 #cgo CFLAGS: -I.
-#cgo LDFLAGS: -L../ -lquickjs
+#cgo LDFLAGS: -L./ -lquickjs
 
-#include "./../quickjs-libc.h";
+#include "./quickjs-libc.h"
 */
 import "C"
 import "unsafe"
@@ -90,4 +90,8 @@ func NewUndefined(ctx *JSContext) *JSValue {
 		ctx: ctx,
 		p:   C.JS_UNDEFINED,
 	}
+}
+
+func NewObject(ctx *JSContext) *JSValue {
+	return nil
 }
