@@ -11,15 +11,15 @@ import "C"
 type JSGoFuncHandler func(args []*JSValue, this *JSValue) (*JSValue, *JSValue)
 
 type JSGoFunc struct {
-	p   C.JSValue
-	ctx *JSContext
-	fb  JSGoFuncHandler
+	P   C.JSValue
+	Ctx *JSContext
+	Fb  JSGoFuncHandler
 }
 
 func NewJSGoFunc(ctx *JSContext, fb JSGoFuncHandler) *JSGoFunc {
 	jsGoFunc := new(JSGoFunc)
-	jsGoFunc.ctx = ctx
-	jsGoFunc.fb = fb
+	jsGoFunc.Ctx = ctx
+	jsGoFunc.Fb = fb
 
 	// 注入bridge
 	ws := `(invoke, id) => function () {
@@ -30,16 +30,16 @@ func NewJSGoFunc(ctx *JSContext, fb JSGoFuncHandler) *JSGoFunc {
 	wfb, _ := ctx.Eval(ws, "")
 	defer wfb.Free()
 
-	id := len(ctx.funcs)
-	ctx.funcs = append(ctx.funcs, jsGoFunc) // 将自己加入到队列中
+	id := len(ctx.Funcs)
+	ctx.Funcs = append(ctx.Funcs, jsGoFunc) // 将自己加入到队列中
 
 	cId := NewInt32(ctx, id)
 	args := []C.JSValue{
-		ctx.invokeFunc,
-		cId.p,
+		ctx.InvokeFunc,
+		cId.P,
 	}
 
-	jsGoFunc.p = C.JS_Call(ctx.p, wfb.p, NewNull(ctx).p, 2, &args[0])
+	jsGoFunc.P = C.JS_Call(ctx.P, wfb.P, NewNull(ctx).P, 2, &args[0])
 
 	return jsGoFunc
 }

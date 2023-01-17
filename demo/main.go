@@ -8,8 +8,35 @@ import (
 	"github.com/ryouaki/gocf"
 )
 
-func init() {
+/*
+#cgo CFLAGS: -I.
+#cgo LDFLAGS: -L../ -lquickjs
 
+#include "../quickjs-libc.h"
+*/
+import "C"
+
+func init() {
+	plugins := make([]*gocf.PluginCb, 2, 4)
+	plugins = initConsole(plugins)
+
+	gocf.RegistPlugin("console", plugins)
+}
+
+func initConsole(plugins []*gocf.PluginCb) []*gocf.PluginCb {
+	plugin := new(gocf.PluginCb)
+	plugin.Name = "log"
+	plugin.Fb = func(args []*gocf.JSValue, this *gocf.JSValue) (*gocf.JSValue, *gocf.JSValue) {
+		goArgs := make([]any, 2, 4)
+		for _, v := range args {
+			val := v.ToString()
+			goArgs = append(goArgs, val)
+		}
+		fmt.Println(goArgs...)
+		return nil, nil
+	}
+
+	return plugins
 }
 
 func main() {

@@ -12,7 +12,11 @@
       "program": "${workspaceRoot}/demo/main.go",
       "env": {
         "MODE": "DEV"
-      }
+      },
+      "args": [
+        "-n",
+        "6"
+      ]
     }
   ]
 }

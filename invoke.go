@@ -21,20 +21,20 @@ func GoInvoke(cctx *C.JSContext, cthis C.JSValueConst, cargc C.int, cargv *C.JSV
 	var args []*JSValue
 	for _, cArg := range cArgs[1:] {
 		args = append(args, &JSValue{
-			ctx: ctx,
-			p:   cArg,
+			Ctx: ctx,
+			P:   cArg,
 		})
 	}
 
-	ret, err := ctx.funcs[id].fb(args, &JSValue{
-		ctx: ctx,
-		p:   cthis,
+	ret, err := ctx.Funcs[id].Fb(args, &JSValue{
+		Ctx: ctx,
+		P:   cthis,
 	})
 	if err != nil {
-		return err.p
+		return err.P
 	} else if ret == nil {
 		return C.JS_UNDEFINED
 	}
 
-	return ret.p
+	return ret.P
 }

@@ -11,22 +11,22 @@ import "unsafe"
 var ctxCache = make(map[*C.JSContext]*JSContext)
 
 type JSContext struct {
-	p          *C.JSContext
-	funcs      []*JSGoFunc
-	invokeFunc C.JSValue // 注入调用go函数的sdk api
-	global     *JSValue
+	P          *C.JSContext
+	Funcs      []*JSGoFunc
+	InvokeFunc C.JSValue // 注入调用go函数的sdk api
+	Global     *JSValue
 }
 
 func (rt *JSRuntime) NewContext() *JSContext {
 	ret := new(JSContext)
-	ret.p = C.JS_NewContext(rt.p)
+	ret.P = C.JS_NewContext(rt.P)
 	// 引擎中的执行上下文句柄
-	ret.funcs = []*JSGoFunc{}
+	ret.Funcs = []*JSGoFunc{}
 	// 调用go的api
-	ret.invokeFunc = C.JS_NewCFunction(ret.p, (*C.JSCFunction)(unsafe.Pointer(C.Invoke)), nil, C.int(5))
-	ret.global = NewValue(ret, C.JS_GetGlobalObject(ret.p)) // 全局对象句柄，用于挂载api
+	ret.InvokeFunc = C.JS_NewCFunction(ret.P, (*C.JSCFunction)(unsafe.Pointer(C.Invoke)), nil, C.int(5))
+	ret.Global = NewValue(ret, C.JS_GetGlobalObject(ret.P)) // 全局对象句柄，用于挂载api
 
-	ctxCache[ret.p] = ret
+	ctxCache[ret.P] = ret
 	return ret
 }
 
@@ -39,8 +39,8 @@ func (ctx *JSContext) Eval(script string, filename string) (*JSValue, *JSValue) 
 	defer C.free(unsafe.Pointer(jsFileName)) // 执行结束后释放空间
 
 	ret := &JSValue{
-		p:   C.JS_Eval(ctx.p, jsStr, jsStrLen, jsFileName, C.int(0)),
-		ctx: ctx,
+		P:   C.JS_Eval(ctx.P, jsStr, jsStrLen, jsFileName, C.int(0)),
+		Ctx: ctx,
 	}
 
 	err := ctx.GetException()
@@ -51,45 +51,45 @@ func (ctx *JSContext) Eval(script string, filename string) (*JSValue, *JSValue) 
 }
 
 func (ctx *JSContext) GetException() *JSValue {
-	err := C.JS_GetException(ctx.p)
+	err := C.JS_GetException(ctx.P)
 	if C.JS_IsNull(err) == 1 {
 		return nil
 	}
 	return &JSValue{
-		ctx: ctx,
-		p:   err,
-		is:  IS_ERROR,
+		Ctx: ctx,
+		P:   err,
+		Is:  IS_ERROR,
 	}
 }
 
 func (ctx *JSContext) ExportValue(name string, val *JSValue) {
-	ctx.global.SetProperty(name, val)
+	ctx.Global.SetProperty(name, val)
 }
 
 func (ctx *JSContext) ExportFunc(name string, fb *JSGoFunc) {
-	ctx.global.SetProperty(name, &JSValue{
-		ctx: fb.ctx,
-		p:   fb.p,
+	ctx.Global.SetProperty(name, &JSValue{
+		Ctx: fb.Ctx,
+		P:   fb.P,
 	})
 }
 
 // 释放JS引擎内变量空间
 func (ctx *JSContext) FreeJSValue(val C.JSValue) {
-	C.JS_FreeValue(ctx.p, val)
+	C.JS_FreeValue(ctx.P, val)
 }
 
 // 释放Go层映射JS变量
 func (ctx *JSContext) FreeValue(val *JSValue) {
-	C.JS_FreeValue(ctx.p, val.p)
+	C.JS_FreeValue(ctx.P, val.P)
 }
 
 // 释放Ctx
 func (ctx *JSContext) Free() {
-	ctx.FreeJSValue(ctx.invokeFunc)
-	ctx.global.Free()
-	_, key := ctxCache[ctx.p]
+	ctx.FreeJSValue(ctx.InvokeFunc)
+	ctx.Global.Free()
+	_, key := ctxCache[ctx.P]
 	if key {
-		delete(ctxCache, ctx.p)
+		delete(ctxCache, ctx.P)
 	}
-	C.JS_FreeContext(ctx.p)
+	C.JS_FreeContext(ctx.P)
 }
