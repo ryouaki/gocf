@@ -27,14 +27,14 @@ func initConsole() []*gocf.PluginCb {
 	plugins := make([]*gocf.PluginCb, 0, 4)
 	plugin := new(gocf.PluginCb)
 	plugin.Name = "log"
-	plugin.Fb = func(args []*gocf.JSValue, this *gocf.JSValue) (*gocf.JSValue, *gocf.JSValue) {
+	plugin.Fb = func(args []*gocf.JSValue, this *gocf.JSValue) *gocf.JSValue {
 		goArgs := make([]any, 0, 4)
 		for _, v := range args {
 			val := v.ToString()
 			goArgs = append(goArgs, val)
 		}
 		fmt.Println(goArgs...)
-		return nil, nil
+		return nil
 	}
 
 	plugins = append(plugins, plugin)
@@ -46,18 +46,18 @@ func initHttp() []*gocf.PluginCb {
 	plugins := make([]*gocf.PluginCb, 0, 4)
 	plugin := new(gocf.PluginCb)
 	plugin.Name = "request"
-	plugin.Fb = func(args []*gocf.JSValue, this *gocf.JSValue) (*gocf.JSValue, *gocf.JSValue) {
+	plugin.Fb = func(args []*gocf.JSValue, this *gocf.JSValue) *gocf.JSValue {
 		method := args[0]
 		if !method.IsString() {
-			return nil, nil
+			return nil
 		}
 		uri := args[1]
 		if !uri.IsString() {
-			return nil, nil
+			return nil
 		}
 
 		// http.NewRequest(method.ToString(), uri.ToString())
-		return nil, nil
+		return nil
 	}
 
 	plugins = append(plugins, plugin)

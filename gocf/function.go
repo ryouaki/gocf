@@ -7,8 +7,14 @@ package gocf
 #include "./quickjs-libc.h"
 */
 import "C"
+import "unsafe"
 
-type JSGoFuncHandler func(args []*JSValue, this *JSValue) (*JSValue, *JSValue)
+const (
+	CB_SUCCESS = 1
+	CB_FAILED  = 0
+)
+
+type JSGoFuncHandler func(args []*JSValue, this *JSValue) *JSValue
 
 type JSGoFunc struct {
 	P   C.JSValue
@@ -28,12 +34,7 @@ func NewJSGoFunc(ctx *JSContext, fb JSGoFuncHandler) *JSGoFunc {
 			var argv = arguments[i];
 			argvs.push(argv)
 		}
-		var [err, ret] = invoke.apply(this, argvs);
-
-		return {
-			error: err !== undefined ? true : false,
-			data: err !== undefined ? err : ret
-		}
+		return invoke.apply(this, argvs);
 	}`
 
 	// 这个执行后会返回一个函数的引用。
@@ -52,4 +53,16 @@ func NewJSGoFunc(ctx *JSContext, fb JSGoFuncHandler) *JSGoFunc {
 	jsGoFunc.P = C.JS_Call(ctx.P, wfb.P, NewNull(ctx).P, 2, &args[0])
 
 	return jsGoFunc
+}
+
+func MakeInvokeResult(ctx *JSContext, status int, val interface{}) *JSValue {
+	data := InterfaceToString(val)
+	cStr := C.CString(data)
+	defer C.free(unsafe.Pointer(cStr))
+	cVal := C.JS_NewString(ctx.P, cStr)
+	ret := NewObject(ctx)
+	ret.SetProperty("error", NewValue(ctx, C.JS_NewBool(ctx.P, C.int(status))))
+	ret.SetProperty("data", NewValue(ctx, cVal))
+
+	return ret
 }
