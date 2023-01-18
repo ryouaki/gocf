@@ -47,17 +47,19 @@ func initHttp() []*gocf.PluginCb {
 	plugin := new(gocf.PluginCb)
 	plugin.Name = "request"
 	plugin.Fb = func(args []*gocf.JSValue, this *gocf.JSValue) *gocf.JSValue {
-		method := args[0]
-		if !method.IsString() {
-			return nil
-		}
-		uri := args[1]
-		if !uri.IsString() {
-			return nil
-		}
+		// method := args[0]
+		// if !method.IsString() {
+		// 	return nil
+		// }
+		// uri := args[1]
+		// if !uri.IsString() {
+		// 	return nil
+		// }
 
 		// http.NewRequest(method.ToString(), uri.ToString())
-		return gocf.MakeInvokeResult(this.Ctx, gocf.CB_SUCCESS, "test")
+		v := make(map[string]string)
+		v["a"] = "aaaaa"
+		return gocf.MakeInvokeResult(this.Ctx, gocf.CB_SUCCESS, "aaaaaa")
 	}
 
 	plugins = append(plugins, plugin)

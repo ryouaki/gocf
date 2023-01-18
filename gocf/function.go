@@ -34,7 +34,12 @@ func NewJSGoFunc(ctx *JSContext, fb JSGoFuncHandler) *JSGoFunc {
 			var argv = arguments[i];
 			argvs.push(argv)
 		}
-		return invoke.apply(this, argvs);
+		var ret = invoke.apply(this, argvs);
+		try {
+			objData = JSON.parse(ret.data)
+			ret.data = objData
+		} catch(e) {}
+		return ret
 	}`
 
 	// 这个执行后会返回一个函数的引用。
