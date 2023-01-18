@@ -7,7 +7,9 @@ package gocf
 #include "./quickjs-libc.h"
 */
 import "C"
-import "unsafe"
+import (
+	"unsafe"
+)
 
 type JSValue struct {
 	P   C.JSValue
@@ -49,6 +51,15 @@ func (val *JSValue) GetPropertyByIndex(idx int) *JSValue {
 		Ctx: val.Ctx,
 		P:   C.JS_GetPropertyUint32(val.Ctx.P, val.P, C.uint32_t(idx)),
 	}
+}
+
+func (val *JSValue) GetPropertyKeys() *JSValue {
+	keys := val.Ctx.Global.GetProperty("Object").GetProperty("keys")
+	args := []C.JSValue{
+		val.P,
+	}
+	ret := C.JS_Call(val.Ctx.P, keys.P, NewNull(val.Ctx).P, 1, &args[0])
+	return NewValue(val.Ctx, ret)
 }
 
 func (val *JSValue) ToString() string {

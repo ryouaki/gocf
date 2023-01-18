@@ -17,14 +17,14 @@ import (
 import "C"
 
 func init() {
-	plugins := make([]*gocf.PluginCb, 0, 4)
-	plugins = initConsole(plugins)
-	gocf.RegistPlugin("console", plugins)
+	gocf.RegistPlugin("console", initConsole())
+	gocf.RegistPlugin("http", initHttp())
 
 	gocf.InitGoCloudFunc()
 }
 
-func initConsole(plugins []*gocf.PluginCb) []*gocf.PluginCb {
+func initConsole() []*gocf.PluginCb {
+	plugins := make([]*gocf.PluginCb, 0, 4)
 	plugin := new(gocf.PluginCb)
 	plugin.Name = "log"
 	plugin.Fb = func(args []*gocf.JSValue, this *gocf.JSValue) (*gocf.JSValue, *gocf.JSValue) {
@@ -39,6 +39,28 @@ func initConsole(plugins []*gocf.PluginCb) []*gocf.PluginCb {
 
 	plugins = append(plugins, plugin)
 
+	return plugins
+}
+
+func initHttp() []*gocf.PluginCb {
+	plugins := make([]*gocf.PluginCb, 0, 4)
+	plugin := new(gocf.PluginCb)
+	plugin.Name = "request"
+	plugin.Fb = func(args []*gocf.JSValue, this *gocf.JSValue) (*gocf.JSValue, *gocf.JSValue) {
+		method := args[0]
+		if !method.IsString() {
+			return nil, nil
+		}
+		uri := args[1]
+		if !uri.IsString() {
+			return nil, nil
+		}
+
+		// http.NewRequest(method.ToString(), uri.ToString())
+		return nil, nil
+	}
+
+	plugins = append(plugins, plugin)
 	return plugins
 }
 

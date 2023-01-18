@@ -23,27 +23,16 @@ func NewJSGoFunc(ctx *JSContext, fb JSGoFuncHandler) *JSGoFunc {
 
 	// 注入bridge
 	ws := `(invoke, id) => function () {
-		var argvs = []
+		var argvs = [id]
 		for (var i = 0; i < arguments.length; i++) {
 			var argv = arguments[i];
-			if (typeof argv === "object") {
-				argvs.push(JSON.stringify(argv))
-			} else {
-				argvs.push(argv)
-			}
+			argvs.push(argv)
 		}
-		var [err, ret] = invoke.call(this, id, argvs);
+		var [err, ret] = invoke.apply(this, argvs);
 
-		if (err !== undefined) {
-			return {
-				error: true,
-				message: err
-			}
-		} else {
-			return {
-				error: false,
-				message: ret
-			}
+		return {
+			error: err !== undefined ? true : false,
+			data: err !== undefined ? err : ret
 		}
 	}`
 

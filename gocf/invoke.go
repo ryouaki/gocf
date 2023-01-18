@@ -26,7 +26,7 @@ func GoInvoke(cctx *C.JSContext, cthis C.JSValueConst, cargc C.int, cargv *C.JSV
 		})
 	}
 
-	data, err := ctx.Funcs[id].Fb(args, &JSValue{
+	err, data := ctx.Funcs[id].Fb(args, &JSValue{
 		Ctx: ctx,
 		P:   cthis,
 	})
