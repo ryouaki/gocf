@@ -19,7 +19,6 @@ import "C"
 func init() {
 	plugins := make([]*gocf.PluginCb, 0, 4)
 	plugins = initConsole(plugins)
-
 	gocf.RegistPlugin("console", plugins)
 
 	gocf.InitGoCloudFunc()

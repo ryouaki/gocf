@@ -1,4 +1,5 @@
 function exec() {
-  console.log('aa', 11, {a:1})
+  ret = console.log('aa', 11, {a:1})
+  console.log(ret)
 }
 exec()

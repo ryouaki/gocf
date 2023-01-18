@@ -32,7 +32,19 @@ func NewJSGoFunc(ctx *JSContext, fb JSGoFuncHandler) *JSGoFunc {
 				argvs.push(argv)
 			}
 		}
-		return invoke.call(this, id, argvs);
+		var [err, ret] = invoke.call(this, id, argvs);
+
+		if (err !== undefined) {
+			return {
+				error: true,
+				message: err
+			}
+		} else {
+			return {
+				error: false,
+				message: ret
+			}
+		}
 	}`
 
 	// 这个执行后会返回一个函数的引用。

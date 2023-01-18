@@ -102,3 +102,10 @@ func NewObject(ctx *JSContext) *JSValue {
 		P:   C.JS_NewObject(ctx.P),
 	}
 }
+
+func NewArray(ctx *JSContext) *JSValue {
+	return &JSValue{
+		Ctx: ctx,
+		P:   C.JS_NewArray(ctx.P),
+	}
+}

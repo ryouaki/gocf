@@ -26,14 +26,20 @@ func GoInvoke(cctx *C.JSContext, cthis C.JSValueConst, cargc C.int, cargv *C.JSV
 		})
 	}
 
-	ret, err := ctx.Funcs[id].Fb(args, &JSValue{
+	data, err := ctx.Funcs[id].Fb(args, &JSValue{
 		Ctx: ctx,
 		P:   cthis,
 	})
+
+	ret := NewArray(ctx)
+
+	ret.SetPropertyByIndex(0, NewUndefined(ctx))
+	ret.SetPropertyByIndex(1, NewUndefined(ctx))
+
 	if err != nil {
-		return err.P
-	} else if ret == nil {
-		return C.JS_UNDEFINED
+		ret.SetPropertyByIndex(0, err)
+	} else if data != nil {
+		ret.SetPropertyByIndex(1, data)
 	}
 
 	return ret.P
