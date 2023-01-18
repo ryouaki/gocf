@@ -31,5 +31,8 @@ func GoInvoke(cctx *C.JSContext, cthis C.JSValueConst, cargc C.int, cargv *C.JSV
 		P:   cthis,
 	})
 
+	if data == nil {
+		return NewUndefined(ctx).P
+	}
 	return data.P
 }

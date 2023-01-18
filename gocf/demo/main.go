@@ -57,7 +57,7 @@ func initHttp() []*gocf.PluginCb {
 		}
 
 		// http.NewRequest(method.ToString(), uri.ToString())
-		return nil
+		return gocf.MakeInvokeResult(this.Ctx, gocf.CB_SUCCESS, "test")
 	}
 
 	plugins = append(plugins, plugin)
