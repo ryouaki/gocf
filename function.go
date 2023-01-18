@@ -23,7 +23,16 @@ func NewJSGoFunc(ctx *JSContext, fb JSGoFuncHandler) *JSGoFunc {
 
 	// 注入bridge
 	ws := `(invoke, id) => function () {
-		return invoke.call(this, id, arguments);
+		var argvs = []
+		for (var i = 0; i < arguments.length; i++) {
+			var argv = arguments[i];
+			if (typeof argv === "object") {
+				argvs.push(JSON.stringify(argv))
+			} else {
+				argvs.push(argv)
+			}
+		}
+		return invoke.call(this, id, argvs);
 	}`
 
 	// 这个执行后会返回一个函数的引用。

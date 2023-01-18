@@ -26,8 +26,8 @@ type JSVM struct {
 }
 
 var pluginMap = make(map[string][]*PluginCb)
-var scripts = make([]string, 4, 8)
-var vms = make([]JSVM, 2, 4)
+var scripts = make([]string, 0, 8)
+var vms = make([]JSVM, 0, 4)
 
 func init() {
 	nums := 1
@@ -76,29 +76,26 @@ func RegistCloudFunc(path string) int {
 	return len(scripts)
 }
 
-func InitGoCloudFunc(script string) {
-	// rt := NewRuntime()
-	// ctx := rt.NewContext()
+func InitGoCloudFunc() {
+	for _, rt := range vms {
+		for key, pls := range pluginMap {
+			obj := NewObject(rt.Ctx)
+			for _, fb := range pls {
+				funcValue := &JSValue{
+					Ctx: rt.Ctx,
+					P:   NewJSGoFunc(rt.Ctx, fb.Fb).P,
+				}
+				obj.SetProperty(fb.Name, funcValue)
+			}
+			rt.Ctx.Global.SetProperty(key, obj)
+		}
+	}
+}
 
-	// fb := NewJSGoFunc(ctx, func(args []*JSValue, this *JSValue) (*JSValue, *JSValue) {
-	// 	for _, v := range args {
-	// 		// fmt.Println(C.GoString(C.JS_ToCString(ctx.p, v.p)))
-	// 		val := v.GetPropertyByIndex(0)
-
-	// 		fmt.Println(C.GoString(C.JS_ToCString(val.ctx.p, val.p)))
-	// 	}
-	// 	fmt.Println("Invoke")
-	// 	return nil, nil
-	// })
-	// ctx.ExportFunc("test", fb)
-	// ret, _ := ctx.Eval(script, "main.js")
-	// fmt.Println(C.GoString(C.JS_ToCString(ctx.p, ret.p)))
-
-	// ret.Free()
-	// ctx.Free()
-	// rt.Free()
-
-	// C.Invoke(nil, C.JSValue{}, C.int(0), nil)
+func RunAPI(script string) {
+	rt := GetVM(0, 0)
+	ret, _ := rt.Ctx.Eval(script, "main.js")
+	fmt.Println(C.GoString(C.JS_ToCString(rt.Ctx.P, ret.P)))
 }
 
 // 注册JS可以调用的函数，挂载到global.gocf对象上

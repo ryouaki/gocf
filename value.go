@@ -97,5 +97,8 @@ func NewUndefined(ctx *JSContext) *JSValue {
 }
 
 func NewObject(ctx *JSContext) *JSValue {
-	return nil
+	return &JSValue{
+		Ctx: ctx,
+		P:   C.JS_NewObject(ctx.P),
+	}
 }

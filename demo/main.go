@@ -17,17 +17,19 @@ import (
 import "C"
 
 func init() {
-	plugins := make([]*gocf.PluginCb, 2, 4)
+	plugins := make([]*gocf.PluginCb, 0, 4)
 	plugins = initConsole(plugins)
 
 	gocf.RegistPlugin("console", plugins)
+
+	gocf.InitGoCloudFunc()
 }
 
 func initConsole(plugins []*gocf.PluginCb) []*gocf.PluginCb {
 	plugin := new(gocf.PluginCb)
 	plugin.Name = "log"
 	plugin.Fb = func(args []*gocf.JSValue, this *gocf.JSValue) (*gocf.JSValue, *gocf.JSValue) {
-		goArgs := make([]any, 2, 4)
+		goArgs := make([]any, 0, 4)
 		for _, v := range args {
 			val := v.ToString()
 			goArgs = append(goArgs, val)
@@ -35,6 +37,8 @@ func initConsole(plugins []*gocf.PluginCb) []*gocf.PluginCb {
 		fmt.Println(goArgs...)
 		return nil, nil
 	}
+
+	plugins = append(plugins, plugin)
 
 	return plugins
 }
@@ -47,10 +51,10 @@ func main() {
 		return
 	}
 
-	data, err1 := ioutil.ReadAll(f)
+	src, err1 := ioutil.ReadAll(f)
 	if err1 != nil {
 		fmt.Println("Read Script Failed:", err1)
 	}
 
-	gocf.InitGoCloudFunc(string(data))
+	gocf.RunAPI(string(src))
 }
