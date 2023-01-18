@@ -9,30 +9,15 @@ package gocf
 import "C"
 import "unsafe"
 
-const (
-	IS_VALUE int = 0
-	IS_ERROR int = -1
-)
-
 type JSValue struct {
 	P   C.JSValue
 	Ctx *JSContext
-	Is  int
 }
 
 func NewValue(ctx *JSContext, val C.JSValue) *JSValue {
 	ret := new(JSValue)
 	ret.Ctx = ctx // 变量的上下文
 	ret.P = val   // 变量在引擎中的值
-	ret.Is = IS_VALUE
-	return ret
-}
-
-func NewError(ctx *JSContext, val C.JSValue) *JSValue {
-	ret := new(JSValue)
-	ret.Ctx = ctx // 变量的上下文
-	ret.P = val   // 变量在引擎中的值
-	ret.Is = IS_ERROR
 	return ret
 }
 
@@ -66,10 +51,6 @@ func (val *JSValue) GetPropertyByIndex(idx int) *JSValue {
 	}
 }
 
-func (val *JSValue) IsError() bool {
-	return val.Is == IS_ERROR
-}
-
 func (val *JSValue) ToString() string {
 	return C.GoString(C.JS_ToCString(val.Ctx.P, val.P))
 }
@@ -78,7 +59,6 @@ func NewInt32(ctx *JSContext, d int) *JSValue {
 	return &JSValue{
 		Ctx: ctx,
 		P:   C.JS_NewInt32(ctx.P, C.int32_t(int32(d))),
-		Is:  IS_VALUE,
 	}
 }
 
@@ -108,4 +88,53 @@ func NewArray(ctx *JSContext) *JSValue {
 		Ctx: ctx,
 		P:   C.JS_NewArray(ctx.P),
 	}
+}
+
+func (v *JSValue) IsNumber() bool {
+	return C.JS_IsNumber(v.P) == 1
+}
+func (v *JSValue) IsBigInt() bool {
+	return C.JS_IsBigInt(v.Ctx.P, v.P) == 1
+}
+func (v *JSValue) IsBigFloat() bool {
+	return C.JS_IsBigFloat(v.P) == 1
+}
+func (v *JSValue) IsBigDecimal() bool {
+	return C.JS_IsBigDecimal(v.P) == 1
+}
+func (v *JSValue) IsBool() bool {
+	return C.JS_IsBool(v.P) == 1
+}
+func (v *JSValue) IsNull() bool {
+	return C.JS_IsNull(v.P) == 1
+}
+func (v *JSValue) IsUndefined() bool {
+	return C.JS_IsUndefined(v.P) == 1
+}
+func (v *JSValue) IsException() bool {
+	return C.JS_IsException(v.P) == 1
+}
+func (v *JSValue) IsUninitialized() bool {
+	return C.JS_IsUninitialized(v.P) == 1
+}
+func (v *JSValue) IsString() bool {
+	return C.JS_IsString(v.P) == 1
+}
+func (v *JSValue) IsSymbol() bool {
+	return C.JS_IsSymbol(v.P) == 1
+}
+func (v *JSValue) IsObject() bool {
+	return C.JS_IsObject(v.P) == 1
+}
+func (v *JSValue) IsArray() bool {
+	return C.JS_IsArray(v.Ctx.P, v.P) == 1
+}
+func (v *JSValue) IsError() bool {
+	return C.JS_IsError(v.Ctx.P, v.P) == 1
+}
+func (v *JSValue) IsFunction() bool {
+	return C.JS_IsFunction(v.Ctx.P, v.P) == 1
+}
+func (v *JSValue) IsConstructor() bool {
+	return C.JS_IsConstructor(v.Ctx.P, v.P) == 1
 }

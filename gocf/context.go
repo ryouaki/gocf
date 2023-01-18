@@ -58,7 +58,6 @@ func (ctx *JSContext) GetException() *JSValue {
 	return &JSValue{
 		Ctx: ctx,
 		P:   err,
-		Is:  IS_ERROR,
 	}
 }
 
