@@ -94,8 +94,12 @@ func InitGoCloudFunc() {
 
 func RunAPI(script string) {
 	rt := GetVM(0, 0)
-	ret, _ := rt.Ctx.Eval(script, "main.js")
-	fmt.Println(C.GoString(C.JS_ToCString(rt.Ctx.P, ret.P)))
+	ret, err := rt.Ctx.Eval(script, "main.js")
+	if err != nil {
+		fmt.Println(C.GoString(C.JS_ToCString(rt.Ctx.P, err.P)))
+	} else {
+		fmt.Println(C.GoString(C.JS_ToCString(rt.Ctx.P, ret.P)))
+	}
 }
 
 // 注册JS可以调用的函数，挂载到global.gocf对象上

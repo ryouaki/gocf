@@ -17,29 +17,10 @@ import (
 import "C"
 
 func init() {
-	gocf.RegistPlugin("console", initConsole())
+
 	gocf.RegistPlugin("http", initHttp())
 
 	gocf.InitGoCloudFunc()
-}
-
-func initConsole() []*gocf.PluginCb {
-	plugins := make([]*gocf.PluginCb, 0, 4)
-	plugin := new(gocf.PluginCb)
-	plugin.Name = "log"
-	plugin.Fb = func(args []*gocf.JSValue, this *gocf.JSValue) *gocf.JSValue {
-		goArgs := make([]any, 0, 4)
-		for _, v := range args {
-			val := v.ToString()
-			goArgs = append(goArgs, val)
-		}
-		fmt.Println(goArgs...)
-		return nil
-	}
-
-	plugins = append(plugins, plugin)
-
-	return plugins
 }
 
 func initHttp() []*gocf.PluginCb {
