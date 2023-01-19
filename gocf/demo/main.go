@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/ryouaki/gocf"
+	"github.com/ryouaki/gocf/plugins"
 )
 
 /*
@@ -18,33 +19,9 @@ import "C"
 
 func init() {
 
-	gocf.RegistPlugin("http", initHttp())
+	plugins.InitPlugins()
 
 	gocf.InitGoCloudFunc()
-}
-
-func initHttp() []*gocf.PluginCb {
-	plugins := make([]*gocf.PluginCb, 0, 4)
-	plugin := new(gocf.PluginCb)
-	plugin.Name = "request"
-	plugin.Fb = func(args []*gocf.JSValue, this *gocf.JSValue) *gocf.JSValue {
-		// method := args[0]
-		// if !method.IsString() {
-		// 	return nil
-		// }
-		// uri := args[1]
-		// if !uri.IsString() {
-		// 	return nil
-		// }
-
-		// http.NewRequest(method.ToString(), uri.ToString())
-		v := make(map[string]string)
-		v["a"] = "aaaaa"
-		return gocf.MakeInvokeResult(this.Ctx, gocf.CB_SUCCESS, "aaaaaa")
-	}
-
-	plugins = append(plugins, plugin)
-	return plugins
 }
 
 func main() {

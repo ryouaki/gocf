@@ -32,7 +32,7 @@ func NewJSGoFunc(ctx *JSContext, fb JSGoFuncHandler) *JSGoFunc {
 		var argvs = [id]
 		for (var i = 0; i < arguments.length; i++) {
 			var argv = arguments[i];
-			typeof argv == "object" ? argvs.push(JSON.stringify(argv)) : argvs.push(argv)
+			argvs.push(argv)
 		}
 		var ret = invoke.apply(this, argvs);
 		try {

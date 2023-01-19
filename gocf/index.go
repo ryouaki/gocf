@@ -12,7 +12,10 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"sync"
 )
+
+var vmLock sync.Mutex
 
 type PluginCb struct {
 	Name string
@@ -54,6 +57,8 @@ func ReleaseVM(vm *JSVM) {
 }
 
 func GetVM(timeout int, retry int) *JSVM {
+	vmLock.Lock()
+	defer vmLock.Unlock()
 	for _, v := range vms {
 		if v.IsFree {
 			v.IsFree = false
@@ -95,18 +100,61 @@ func InitGoCloudFunc() {
 func RunAPI(script string) {
 	rt := GetVM(0, 0)
 	ret, err := rt.Ctx.Eval(script, "main.js")
+
+	resolveCB := NewJSGoFunc(rt.Ctx, func(args []*JSValue, this *JSValue) *JSValue {
+		fmt.Println(args[0].ToString())
+		return nil
+	})
+
+	rejectCB := NewJSGoFunc(rt.Ctx, func(args []*JSValue, this *JSValue) *JSValue {
+		fmt.Println(args[0].ToString())
+		return nil
+	})
+
+	exec := `function exec1 (fb, resolve, reject) {
+		fb().then((res) => {
+			console.log(res)
+			resolve(res)
+		}).catch(reject).finally(() => {
+			console.log('end')
+		})
+	};`
+	wfb, _ := rt.Ctx.Eval(exec, "")
+	defer wfb.Free()
+
+	callFb := rt.Ctx.Global.GetProperty("exec1")
+	e := rt.Ctx.Global.GetProperty("exec")
+	fmt.Println(e.IsFunction(), rt.Ctx.Global.GetPropertyKeys().ToString())
+
+	args := []C.JSValue{
+		e.P,
+		resolveCB.P,
+		rejectCB.P,
+	}
+
+	result := C.JS_Call(rt.Ctx.P, callFb.P, NewNull(rt.Ctx).P, 3, &args[0])
+	// fmt.Println(NewValue(rt.Ctx, result).IsException())
+	if NewValue(rt.Ctx, result).IsException() {
+		r := rt.Ctx.GetException()
+		fmt.Println(r.ToString())
+	}
+	fmt.Println(C.JS_IsJobPending(rt.VM.P))
+	if C.JS_IsJobPending(rt.VM.P) > 0 {
+		C.JS_ExecutePendingJob(rt.VM.P, &rt.Ctx.P)
+	}
 	if err != nil {
 		fmt.Println(C.GoString(C.JS_ToCString(rt.Ctx.P, err.P)))
 	} else {
 		fmt.Println(C.GoString(C.JS_ToCString(rt.Ctx.P, ret.P)))
 	}
+	ReleaseVM(rt)
 }
 
 // 注册JS可以调用的函数，挂载到global.gocf对象上
 func RegistPlugin(name string, fbs []*PluginCb) error {
 	_, had := pluginMap[name]
 	if had {
-		return fmt.Errorf("[GoCF] Plugin \"%s\" has been registed.", name)
+		return fmt.Errorf("[GoCF]:Plugin \"%s\" has been registed.", name)
 	}
 	pluginMap[name] = fbs
 	return nil
