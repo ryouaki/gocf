@@ -7,7 +7,9 @@ package gocf
 #include "./quickjs-libc.h"
 */
 import "C"
-import "unsafe"
+import (
+	"unsafe"
+)
 
 const (
 	CB_SUCCESS = 1
@@ -43,7 +45,7 @@ func NewJSGoFunc(ctx *JSContext, fb JSGoFuncHandler) *JSGoFunc {
 	}`
 
 	// 这个执行后会返回一个函数的引用。
-	wfb, _ := ctx.Eval(ws, "")
+	wfb, _ := ctx.Eval(ws, "", 0)
 	defer wfb.Free()
 
 	id := len(ctx.Funcs)

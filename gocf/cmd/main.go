@@ -18,9 +18,10 @@ import (
 import "C"
 
 func init() {
-
+	// 初始化系统插件
 	plugins.InitPlugins()
 
+	// 初始化JS引擎
 	gocf.InitGoCloudFunc()
 }
 
@@ -31,6 +32,8 @@ func main() {
 		f.Close()
 		return
 	}
+
+	fmt.Println(os.Getwd())
 
 	src, err1 := ioutil.ReadAll(f)
 	if err1 != nil {

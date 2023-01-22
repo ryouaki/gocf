@@ -99,54 +99,72 @@ func InitGoCloudFunc() {
 
 func RunAPI(script string) {
 	rt := GetVM(0, 0)
-	ret, err := rt.Ctx.Eval(script, "main.js")
 
-	resolveCB := NewJSGoFunc(rt.Ctx, func(args []*JSValue, this *JSValue) *JSValue {
-		fmt.Println(args[0].ToString())
-		return nil
-	})
-
-	rejectCB := NewJSGoFunc(rt.Ctx, func(args []*JSValue, this *JSValue) *JSValue {
-		fmt.Println(args[0].ToString())
-		return nil
-	})
-
-	exec := `function exec1 (fb, resolve, reject) {
-		fb().then((res) => {
-			console.log(res)
-			resolve(res)
-		}).catch(reject).finally(() => {
-			console.log('end')
-		})
-	};`
-	wfb, _ := rt.Ctx.Eval(exec, "")
-	defer wfb.Free()
-
-	callFb := rt.Ctx.Global.GetProperty("exec1")
-	e := rt.Ctx.Global.GetProperty("exec")
-	fmt.Println(e.IsFunction(), rt.Ctx.Global.GetPropertyKeys().ToString())
-
-	args := []C.JSValue{
-		e.P,
-		resolveCB.P,
-		rejectCB.P,
-	}
-
-	result := C.JS_Call(rt.Ctx.P, callFb.P, NewNull(rt.Ctx).P, 3, &args[0])
-	// fmt.Println(NewValue(rt.Ctx, result).IsException())
-	if NewValue(rt.Ctx, result).IsException() {
-		r := rt.Ctx.GetException()
-		fmt.Println(r.ToString())
-	}
-	fmt.Println(C.JS_IsJobPending(rt.VM.P))
-	if C.JS_IsJobPending(rt.VM.P) > 0 {
-		C.JS_ExecutePendingJob(rt.VM.P, &rt.Ctx.P)
-	}
-	if err != nil {
+	func_val, err := rt.Ctx.Eval(script, "main", 1<<0|1<<5)
+	if rt.Ctx.GetException() != nil {
 		fmt.Println(C.GoString(C.JS_ToCString(rt.Ctx.P, err.P)))
-	} else {
-		fmt.Println(C.GoString(C.JS_ToCString(rt.Ctx.P, ret.P)))
+		return
 	}
+
+	C.js_module_set_import_meta(rt.Ctx.P, func_val.P, 0, 0)
+	module := C.GetModule(func_val.P)
+	atom := C.JS_GetModuleName(rt.Ctx.P, module)
+	val := C.JS_GetImportMeta(rt.Ctx.P, module)
+	fmt.Println(222, NewValue(rt.Ctx, C.JS_AtomToValue(rt.Ctx.P, atom)).ToString(), NewValue(rt.Ctx, val).ToString())
+
+	// e := rt.Ctx.Global.GetProperty("exec")
+	// fmt.Println(1, rt.Ctx.Global.GetPropertyKeys().ToString(), rr.GetProperty("hello"))
+
+	// exec := `
+	// function exec1 (fb, resolve, reject) {
+	// 	fb().then((res) => {
+	// 		console.log(res)
+	// 		resolve(res)
+	// 	}).catch(reject)
+	// };
+	// `
+	// wfb, _ := rt.Ctx.Eval(exec, "", 1<<0)
+	// defer wfb.Free()
+	// if rt.Ctx.GetException() != nil {
+	// 	r := rt.Ctx.GetException()
+	// 	fmt.Println(r.ToString())
+	// }
+	// // C.ListModule(rt.Ctx.P)
+
+	// resolveCB := NewJSGoFunc(rt.Ctx, func(args []*JSValue, this *JSValue) *JSValue {
+	// 	fmt.Println(args[0].ToString())
+	// 	return nil
+	// })
+
+	// rejectCB := NewJSGoFunc(rt.Ctx, func(args []*JSValue, this *JSValue) *JSValue {
+	// 	fmt.Println(args[0].ToString())
+	// 	return nil
+	// })
+
+	// callFb := rt.Ctx.Global.GetProperty("exec1")
+	// fmt.Println(callFb.IsFunction())
+
+	// args := []C.JSValue{
+	// 	e.P,
+	// 	resolveCB.P,
+	// 	rejectCB.P,
+	// }
+
+	// result := C.JS_Call(rt.Ctx.P, callFb.P, NewNull(rt.Ctx).P, 3, &args[0])
+	// // fmt.Println(NewValue(rt.Ctx, result).IsException())
+	// if NewValue(rt.Ctx, result).IsException() {
+	// 	r := rt.Ctx.GetException()
+	// 	fmt.Println(r.ToString())
+	// }
+	// fmt.Println(C.JS_IsJobPending(rt.VM.P))
+	// if C.JS_IsJobPending(rt.VM.P) > 0 {
+	// 	C.JS_ExecutePendingJob(rt.VM.P, &rt.Ctx.P)
+	// }
+	// if err != nil {
+	// 	fmt.Println(C.GoString(C.JS_ToCString(rt.Ctx.P, err.P)))
+	// } else {
+	// 	// fmt.Println(C.GoString(C.JS_ToCString(rt.Ctx.P, ret.P)))
+	// }
 	ReleaseVM(rt)
 }
 

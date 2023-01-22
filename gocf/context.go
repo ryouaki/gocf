@@ -19,7 +19,7 @@ type JSContext struct {
 
 func (rt *JSRuntime) NewContext() *JSContext {
 	ret := new(JSContext)
-	ret.P = C.JS_NewContext(rt.P)
+	ret.P = C.NewJsContext(rt.P)
 	// 引擎中的执行上下文句柄
 	ret.Funcs = []*JSGoFunc{}
 	// 调用go的api
@@ -30,7 +30,7 @@ func (rt *JSRuntime) NewContext() *JSContext {
 	return ret
 }
 
-func (ctx *JSContext) Eval(script string, filename string) (*JSValue, *JSValue) {
+func (ctx *JSContext) Eval(script string, filename string, flag int) (*JSValue, *JSValue) {
 	jsStr := C.CString(script)          // 将JS文本代码转换为quickjs引擎代码格式
 	defer C.free(unsafe.Pointer(jsStr)) // 执行结束后需要释放空间
 
@@ -39,7 +39,7 @@ func (ctx *JSContext) Eval(script string, filename string) (*JSValue, *JSValue) 
 	defer C.free(unsafe.Pointer(jsFileName)) // 执行结束后释放空间
 
 	ret := &JSValue{
-		P:   C.JS_Eval(ctx.P, jsStr, jsStrLen, jsFileName, C.int(0)),
+		P:   C.JS_Eval(ctx.P, jsStr, jsStrLen, jsFileName, C.int(flag)),
 		Ctx: ctx,
 	}
 

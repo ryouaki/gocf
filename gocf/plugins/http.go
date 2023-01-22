@@ -1,6 +1,8 @@
 package plugins
 
-import "github.com/ryouaki/gocf"
+import (
+	"github.com/ryouaki/gocf"
+)
 
 func initHttp() []*gocf.PluginCb {
 	plugins := make([]*gocf.PluginCb, 0, 4)

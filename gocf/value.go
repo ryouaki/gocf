@@ -16,6 +16,11 @@ type JSValue struct {
 	Ctx *JSContext
 }
 
+type JSAtom struct {
+	P   C.JSAtom
+	Ctx *JSContext
+}
+
 func NewValue(ctx *JSContext, val C.JSValue) *JSValue {
 	ret := new(JSValue)
 	ret.Ctx = ctx // 变量的上下文
@@ -25,6 +30,10 @@ func NewValue(ctx *JSContext, val C.JSValue) *JSValue {
 
 func (val *JSValue) Free() {
 	C.JS_FreeValue(val.Ctx.P, val.P)
+}
+
+func (atom *JSAtom) Free() {
+	C.JS_FreeAtom(atom.Ctx.P, atom.P)
 }
 
 func (val *JSValue) SetProperty(key string, v *JSValue) {
@@ -54,12 +63,28 @@ func (val *JSValue) GetPropertyByIndex(idx int) *JSValue {
 }
 
 func (val *JSValue) GetPropertyKeys() *JSValue {
-	keys := val.Ctx.Global.GetProperty("Object").GetProperty("keys")
-	args := []C.JSValue{
-		val.P,
+	var (
+		ptr  *C.JSPropertyEnum
+		size C.uint32_t
+	)
+
+	result := int(C.JS_GetOwnPropertyNames(val.Ctx.P, &ptr, &size, val.P, C.int(1<<0|1<<1|1<<2)))
+	if result < 0 {
+		return NewArray(val.Ctx)
 	}
-	ret := C.JS_Call(val.Ctx.P, keys.P, NewNull(val.Ctx).P, 1, &args[0])
-	return NewValue(val.Ctx, ret)
+	defer C.js_free(val.Ctx.P, unsafe.Pointer(ptr))
+
+	entries := (*[1 << unsafe.Sizeof(0)]C.JSPropertyEnum)(unsafe.Pointer(ptr))
+
+	names := NewArray(val.Ctx)
+
+	for i := 0; C.uint32_t(i) < size; i++ {
+		v := NewValue(val.Ctx, C.JS_AtomToValue(val.Ctx.P, entries[i].atom))
+		C.JS_FreeAtom(val.Ctx.P, entries[i].atom)
+		names.SetPropertyByIndex(i, v)
+	}
+
+	return names
 }
 
 func (val *JSValue) ToString() string {
