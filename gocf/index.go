@@ -13,6 +13,7 @@ import (
 	"os"
 	"strconv"
 	"sync"
+	"unsafe"
 )
 
 var vmLock sync.Mutex
@@ -107,18 +108,27 @@ func RunAPI(script string) {
 	}
 
 	// C.js_module_set_import_meta(rt.Ctx.P, func_val.P, 0, 0)
-	// // module := C.GetModule(func_val.P)
+	// module := C.GetModule(func_val.P)
 	// if rt.Ctx.GetException() != nil {
 	// 	r := rt.Ctx.GetException()
 	// 	fmt.Println(r.ToString())
 	// }
 
+	cName := C.CString("main")
+	defer C.free(unsafe.Pointer(cName))
+	C.GetModule(rt.Ctx.P, C.JS_NewAtom(rt.Ctx.P, cName))
 	// e := rt.Ctx.Global.GetProperty("exec")
-	// fmt.Println(1, rt.Ctx.Global.GetPropertyKeys().ToString(), rr.GetProperty("hello"))
+	// fmt.Println(1, module)
+	// C.FreeModule(rt.Ctx.P, module)
+	if rt.Ctx.GetException() != nil {
+		r := rt.Ctx.GetException()
+		fmt.Println(r.ToString())
+	}
 
 	exec := `
 	import exec from "main";
 
+	console.log(333, exec)
 	function exec1 (resolve, reject) {
 		const _exec = exec
 		_exec().then((res) => {
@@ -133,6 +143,10 @@ func RunAPI(script string) {
 	if rt.Ctx.GetException() != nil {
 		r := rt.Ctx.GetException()
 		fmt.Println(r.ToString())
+		module := C.GetModule(rt.Ctx.P, C.JS_NewAtom(rt.Ctx.P, cName))
+
+		fmt.Println(module == nil)
+
 	}
 	// // C.ListModule(rt.Ctx.P)
 

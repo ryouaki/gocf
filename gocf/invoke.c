@@ -1,5 +1,7 @@
 #include "_cgo_export.h"
 
+#include "stdio.h"
+
 JSValue Invoke(JSContext *ctx, JSValueConst thisCtx, int argc, JSValueConst *argv){
   return GoInvoke(ctx, thisCtx, argc, argv);
 }
@@ -12,12 +14,17 @@ JSContext* NewJsContext(JSRuntime *rt) {
 	return ctx;
 }
 
-JSModuleDef* GetModule(JSValueConst importVal) {
-  return JS_VALUE_GET_PTR(importVal);
+JSModuleDef* GetModule(JSContext *ctx, JSAtom module_name) {
+	JSModuleDef *m;
+	m = JS_FindLoadedModule(ctx, module_name);
+	if (m) {
+			JS_FreeAtom(ctx, module_name);
+			return m;
+	}
+
+	return m;
 }
 
-JSContext* ListModule(JSContext *ctx) {
-	// ctx->loaded_modules;
-
-	return ctx;
+void FreeModule(JSContext *ctx, JSModuleDef *m) {
+	return JS_FreeModule(ctx, m);
 }

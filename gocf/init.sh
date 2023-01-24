@@ -1,5 +1,7 @@
 #!/bin/bash
 
+rm -rf ./quickjs.h
+rm -rf ./quickjs-libc.h
 rm -rf ./libquickjs.a
 rm -rf ./pkgs/quickjs-master
 
@@ -8,6 +10,12 @@ cd ./pkgs
 unzip ./quickjs-master.zip
 
 cd ./quickjs-master
+
+rm -rf ./quickjs.h
+rm -rf ./quickjs.c
+
+cp ../quickjs.h ./quickjs.h
+cp ../quickjs.c ./quickjs.c
 
 cp ./quickjs.h ../../quickjs.h
 cp ./quickjs-libc.h ../../quickjs-libc.h
@@ -24,4 +32,4 @@ cd ../
 go install
 
 
-# go env -w CGO_ENABLED=1
+go env -w CGO_ENABLED=1
