@@ -126,6 +126,13 @@ func NewArray(ctx *JSContext) *JSValue {
 	}
 }
 
+func NewFunc(ctx *JSContext, f *JSGoFunc) *JSValue {
+	return &JSValue{
+		Ctx: ctx,
+		P:   f.P,
+	}
+}
+
 func (v *JSValue) IsNumber() bool {
 	return C.JS_IsNumber(v.P) == 1
 }
