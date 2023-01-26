@@ -13,6 +13,7 @@ import (
 	"os"
 	"strconv"
 	"sync"
+	"unsafe"
 )
 
 var vmLock sync.Mutex
@@ -106,6 +107,23 @@ func RunAPI(script string) {
 		return
 	}
 
+	cStr := C.CString("tt/aa.js")
+	defer C.free(unsafe.Pointer(cStr))
+	m := C.JS_FindLoadedModule(rt.Ctx.P, C.JS_NewAtom(rt.Ctx.P, cStr))
+	fmt.Println(444, C.GoString(C.JS_ToCString(rt.Ctx.P, C.JS_AtomToString(rt.Ctx.P, C.JS_GetModuleName(rt.Ctx.P, m)))))
+
+	C.JS_FreeModule(rt.Ctx.P, m)
+
+	_, err = rt.Ctx.Eval(`
+	export default function () {
+		return "222"
+	}
+	`, "tt/aa.js", 1<<0|1<<5)
+	if rt.Ctx.GetException() != nil {
+		fmt.Println(C.GoString(C.JS_ToCString(rt.Ctx.P, err.P)))
+		return
+	}
+
 	resolveCB := NewJSGoFunc(rt.Ctx, func(args []*JSValue, this *JSValue) *JSValue {
 		fmt.Println(222, args[0].GetPropertyKeys().ToString())
 		fmt.Println(222, args[0].GetProperty("data").GetProperty("a").ToString())
@@ -135,7 +153,7 @@ func RunAPI(script string) {
 		fmt.Println(r.ToString())
 	}
 
-	// // fmt.Println(NewValue(rt.Ctx, result).IsException())
+	// // // fmt.Println(NewValue(rt.Ctx, result).IsException())
 	if r := rt.Ctx.GetException(); r != nil {
 		fmt.Println(r.ToString())
 	}
@@ -149,6 +167,8 @@ func RunAPI(script string) {
 		// fmt.Println(C.GoString(C.JS_ToCString(rt.Ctx.P, ret.P)))
 	}
 	ReleaseVM(rt)
+	// rt.Ctx.Free()
+	// rt.VM.Free()
 }
 
 // 注册JS可以调用的函数，挂载到global.gocf对象上

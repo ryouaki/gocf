@@ -133,6 +133,13 @@ func NewFunc(ctx *JSContext, f *JSGoFunc) *JSValue {
 	}
 }
 
+func NewAtom(ctx *JSContext, v *JSValue) *JSAtom {
+	return &JSAtom{
+		Ctx: ctx,
+		P:   C.JS_ValueToAtom(ctx.P, v.P),
+	}
+}
+
 func (v *JSValue) IsNumber() bool {
 	return C.JS_IsNumber(v.P) == 1
 }
