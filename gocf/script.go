@@ -4,12 +4,14 @@
 package gocf
 
 import (
+	"fmt"
 	"io/ioutil"
 	"strings"
 )
 
 type ScriptApi struct {
 	Path   string // api地址
+	Module string // 模块名
 	Method string // api方法
 	Ver    string // api脚本版本
 	File   string // 脚本文件地址
@@ -63,7 +65,8 @@ func LoadApiScripts(root string) {
 			continue
 		}
 		api := ScriptApi{
-			Path:   apiToPath(apiInfo[1]),
+			Path:   "/" + apiToPath(apiInfo[1]),
+			Module: apiToPath(apiInfo[1]),
 			Method: apiInfo[0],
 			Ver:    apiInfo[2],
 			File:   root + "/" + name,
@@ -75,4 +78,13 @@ func LoadApiScripts(root string) {
 // 配置路径转访问路由路径
 func apiToPath(path string) string {
 	return strings.ReplaceAll(path, "_", "/")
+}
+
+func GetApiModule(method string, path string) (string, error) {
+	for _, v := range ScriptApiMap {
+		if method == v.Method && path == v.Path {
+			return v.Module, nil
+		}
+	}
+	return "", fmt.Errorf("Api not found!")
 }

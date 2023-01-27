@@ -9,9 +9,19 @@ package gocf
 */
 import "C"
 import (
+	"fmt"
 	"os"
 	"strconv"
 )
+
+// 启动引擎数量，默认1
+var Nums = 1
+
+// 脚本加载目录，默认./
+var Root = "./"
+
+// Master的地址+端口
+var MasterHost = "127.0.0.1:8001"
 
 // 根据入参初始化参数
 func init() {
@@ -30,10 +40,11 @@ func init() {
 func InitGoCloudFunc() {
 	LoadApiScripts(Root)
 	InitVM(Nums)
+	InitApi()
 }
 
-func RunAPI(script string) {
-	// rt := GetVM(0, 0)
+func RunAPI() {
+	rt := GetVM(1)
 
 	// _, err := rt.Ctx.Eval(script, "main", 1<<0|1<<5)
 	// if rt.Ctx.GetException() != nil {
@@ -58,49 +69,47 @@ func RunAPI(script string) {
 	// 	return
 	// }
 
-	// resolveCB := NewJSGoFunc(rt.Ctx, func(args []*JSValue, this *JSValue) *JSValue {
-	// 	fmt.Println(222, args[0].GetPropertyKeys().ToString())
-	// 	fmt.Println(222, args[0].GetProperty("data").GetProperty("a").ToString())
-	// 	return nil
-	// })
+	resolveCB := NewJSGoFunc(rt.Ctx, func(args []*JSValue, this *JSValue) *JSValue {
+		fmt.Println(222, args[0].GetPropertyKeys().ToString())
+		fmt.Println(222, args[0].GetProperty("data").ToString())
+		return nil
+	})
 
-	// rejectCB := NewJSGoFunc(rt.Ctx, func(args []*JSValue, this *JSValue) *JSValue {
-	// 	fmt.Println(args[0].ToString())
-	// 	return nil
-	// })
+	rejectCB := NewJSGoFunc(rt.Ctx, func(args []*JSValue, this *JSValue) *JSValue {
+		fmt.Println(args[0].ToString())
+		return nil
+	})
 
-	// rt.Ctx.Global.SetProperty("resolve", NewFunc(rt.Ctx, resolveCB))
-	// rt.Ctx.Global.SetProperty("reject", NewFunc(rt.Ctx, rejectCB))
+	rt.Ctx.Global.SetProperty("resolve", NewFunc(rt.Ctx, resolveCB))
+	rt.Ctx.Global.SetProperty("reject", NewFunc(rt.Ctx, rejectCB))
 
-	// exec := `
-	// import exec from "main";
+	exec := `
+	import exec from "a/b/c";
 
-	// exec().then((res) => {
-	// 	console.log(res)
-	// 	resolve(res)
-	// }).catch(reject)
-	// `
-	// wfb, _ := rt.Ctx.Eval(exec, "<input>", 1<<0)
-	// defer wfb.Free()
-	// if rt.Ctx.GetException() != nil {
-	// 	r := rt.Ctx.GetException()
-	// 	fmt.Println(r.ToString())
-	// }
+	exec().then((res) => {
+		console.log(111, res)
+		resolve(res)
+	}).catch(reject)
+	`
+	wfb, _ := rt.Ctx.Eval(exec, "<input>", 1<<0)
+	defer wfb.Free()
+	if rt.Ctx.GetException() != nil {
+		r := rt.Ctx.GetException()
+		fmt.Println(r.ToString())
+	}
 
-	// // // // fmt.Println(NewValue(rt.Ctx, result).IsException())
-	// if r := rt.Ctx.GetException(); r != nil {
-	// 	fmt.Println(r.ToString())
-	// }
-	// fmt.Println(C.JS_IsJobPending(rt.VM.P))
-	// if C.JS_IsJobPending(rt.VM.P) > 0 {
-	// 	C.JS_ExecutePendingJob(rt.VM.P, &rt.Ctx.P)
-	// }
+	// // // fmt.Println(NewValue(rt.Ctx, result).IsException())
+	if r := rt.Ctx.GetException(); r != nil {
+		fmt.Println(r.ToString())
+	}
+	fmt.Println(222, C.JS_IsJobPending(rt.VM.P))
+	for C.JS_IsJobPending(rt.VM.P) > 0 {
+		C.JS_ExecutePendingJob(rt.VM.P, &rt.Ctx.P)
+	}
 	// if err != nil {
 	// 	fmt.Println(C.GoString(C.JS_ToCString(rt.Ctx.P, err.P)))
-	// } else {
-	// 	// fmt.Println(C.GoString(C.JS_ToCString(rt.Ctx.P, ret.P)))
 	// }
-	// ReleaseVM(rt)
+	ReleaseVM(rt)
 	// rt.Ctx.Free()
 	// rt.VM.Free()
 }

@@ -11,16 +11,12 @@ import "C"
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
+	"os"
 	"strconv"
 	"sync"
 	"time"
 )
-
-// 启动引擎数量，默认1
-var Nums = 1
-
-// 脚本加载目录，默认./
-var Root = "./"
 
 var vmLock sync.Mutex
 
@@ -48,6 +44,7 @@ func InitVM(nums int) {
 	if nums < 1 {
 		return
 	}
+
 	// 根据启动参数-n初始化引擎数量
 	for i := 0; i < nums; i++ {
 		rt := NewRuntime()     // 初始化引擎
@@ -90,11 +87,8 @@ func GetVM(ot time.Duration) *JSVM {
 	ctx, cancel := context.WithTimeout(context.Background(), ot*time.Millisecond)
 	defer cancel()
 
-	var wg sync.WaitGroup
-
-	wg.Add(1)
-
 	var vm *JSVM = nil
+	rt := make(chan bool)
 
 	go func() {
 		for {
@@ -102,25 +96,21 @@ func GetVM(ot time.Duration) *JSVM {
 				if v.IsFree {
 					v.IsFree = false
 					vm = &v
-					wg.Done()
+					rt <- true
 				}
 			}
-			// 不能一直占用cpu，需要休眠1ms
-			time.Sleep(time.Duration(1) * time.Millisecond)
-		}
-	}()
-	go func() {
-		select {
-		case <-ctx.Done():
-			vm = nil
-			wg.Done()
+			// 不能一直占用cpu，需要休眠4ms
+			time.Sleep(time.Duration(4) * time.Millisecond)
 		}
 	}()
 
-	// 等待2个协程其中之一返回
-	wg.Wait()
-
-	return vm
+	// 如果返回nil即为超时。没有获取到vm
+	select {
+	case <-rt:
+		return vm
+	case <-ctx.Done():
+		return vm
+	}
 }
 
 // 释放虚拟机
@@ -139,4 +129,49 @@ func RegistPlugin(name string, fbs []*Plugin) error {
 	}
 	pluginMap[name] = fbs
 	return nil
+}
+
+// 初始化api
+func InitApi() {
+	// 将Script脚本注入到各个VM的Ctx中。
+	for _, v := range ScriptApiMap {
+		fb, openError := os.OpenFile(v.File, os.O_RDONLY, 0111)
+		if openError != nil {
+			fb.Close()
+			GoCFLog("Error", v.File+" Open failed", openError.Error())
+			return
+		}
+
+		// 获取完整脚本文件
+		code, readError := ioutil.ReadAll(fb)
+		if readError != nil {
+			GoCFLog("Error", v.File+" Read failed", readError.Error())
+			fb.Close()
+			return
+		}
+
+		if evalError := InjectModule(string(code), v); evalError != nil {
+			GoCFLog("Error", v.File+" Eval failed", evalError.Error())
+			fb.Close()
+			return
+		}
+		fb.Close()
+	}
+}
+
+func InjectModule(code string, api ScriptApi) error {
+	for _, v := range vms {
+		_, err := v.Ctx.Eval(code, api.Module, 1<<0|1<<5)
+		if v.Ctx.GetException() != nil {
+			return fmt.Errorf(err.ToString())
+		}
+	}
+
+	return nil
+}
+
+func WaitForLoop(rt *JSVM) {
+	for C.JS_IsJobPending(rt.VM.P) > 0 {
+		C.JS_ExecutePendingJob(rt.VM.P, &rt.Ctx.P)
+	}
 }

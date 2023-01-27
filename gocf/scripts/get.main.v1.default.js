@@ -1,6 +1,8 @@
-export default async function exec(method, query, params, headers, cookies) {
+export default async function exec(method, query, params, body, headers) {
+  console.log(111)
   return {
     error: false,
-    data: "Hello World"
+    data: "Hello World 1"
   }
 }
+

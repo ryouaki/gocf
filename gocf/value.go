@@ -29,7 +29,9 @@ func NewValue(ctx *JSContext, val C.JSValue) *JSValue {
 }
 
 func (val *JSValue) Free() {
-	C.JS_FreeValue(val.Ctx.P, val.P)
+	if val != nil {
+		C.JS_FreeValue(val.Ctx.P, val.P)
+	}
 }
 
 func (atom *JSAtom) Free() {
