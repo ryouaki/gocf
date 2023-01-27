@@ -14,6 +14,10 @@
         "MODE": "DEV"
       },
       "args": [
+        "-n",
+        "1",
+        "-p",
+        "/Users/user/Documents/WorkDocs/gocf/gocf/scripts"
       ]
     }
   ]

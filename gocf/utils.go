@@ -2,6 +2,7 @@ package gocf
 
 import (
 	"encoding/json"
+	"fmt"
 	"strconv"
 )
 
@@ -59,4 +60,32 @@ func InterfaceToString(value interface{}) string {
 	}
 
 	return key
+}
+
+func IndexOfStringArray(arr []string, el string) int {
+	return HasInArray(arr, el, func(a string, b string) bool {
+		return a == b
+	})
+}
+
+func HasInArray[T any](arr []T, el T, cp func(a T, b T) bool) int {
+	if cp == nil {
+		return -1
+	}
+	for i, v := range arr {
+		if cp(v, el) {
+			return i
+		}
+	}
+
+	return -1
+}
+
+func GoCFLog(args ...any) {
+	goArgs := make([]any, 1, 4)
+	goArgs[0] = "[GoCF]:"
+	for _, v := range args {
+		goArgs = append(goArgs, v)
+	}
+	fmt.Println(goArgs...)
 }

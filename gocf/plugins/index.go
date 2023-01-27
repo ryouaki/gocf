@@ -7,9 +7,9 @@ func InitPlugins() {
 	gocf.RegistPlugin("http", initHttp())
 }
 
-func makePlugin(name string, cbFunc gocf.JSGoFuncHandler) *gocf.PluginCb {
-	plugin := new(gocf.PluginCb)
+func makePlugin(name string, cbFunc gocf.JSGoFuncHandler) *gocf.Plugin {
+	plugin := new(gocf.Plugin)
 	plugin.Name = name
-	plugin.Fb = cbFunc
+	plugin.Cb = cbFunc
 	return plugin
 }

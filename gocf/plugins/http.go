@@ -4,8 +4,8 @@ import (
 	"github.com/ryouaki/gocf"
 )
 
-func initHttp() []*gocf.PluginCb {
-	plugins := make([]*gocf.PluginCb, 0, 4)
+func initHttp() []*gocf.Plugin {
+	plugins := make([]*gocf.Plugin, 0, 4)
 	plugin := makePlugin("request", func(args []*gocf.JSValue, this *gocf.JSValue) *gocf.JSValue {
 		// method := args[0]
 		// if !method.IsString() {
