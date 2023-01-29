@@ -1,4 +1,4 @@
-module gocfm
+module github.com/ryouaki/gocfm
 
 go 1.18
 
