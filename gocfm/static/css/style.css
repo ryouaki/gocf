@@ -16,6 +16,12 @@ body {
   padding: 15px;
 }
 
+.form-signin .fw-normal {
+  color: #00acd7;
+  font-weight: 900!important;
+  font-size: 2.2rem;
+}
+
 .form-signin .form-floating:focus-within {
   z-index: 2;
 }
