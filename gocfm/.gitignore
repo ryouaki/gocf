@@ -11,3 +11,5 @@
 /dist
 /.mfsu
 .swc
+/bin
+.DS_Store
