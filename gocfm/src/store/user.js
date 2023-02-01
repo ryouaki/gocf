@@ -1,9 +1,20 @@
-import React from 'react';
+import React, { useReducer } from 'react';
 
-const UserContext = React.createContext({});
+let initState = {msg: "h"};
 
-export default function UserProvider({childrens}) {
-  return <UserContext.Provider>
-    {childrens}
+export const UserContext = React.createContext(initState); 
+
+export function UserProvider({children}) {
+  const [state, dispatch] = useReducer(function (state, action) {
+    switch (action.type) {
+      case 'change':
+        state.msg = 'hello'
+        return {...state};
+      default:
+        return state;
+    }
+  }, initState);
+  return <UserContext.Provider value={{state, dispatch}}>
+    {children}
   </UserContext.Provider>
 }
