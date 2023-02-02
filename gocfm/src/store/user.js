@@ -1,20 +1,23 @@
 import React, { useReducer } from 'react';
 
-let initState = {msg: "h"};
+const initState = { isLogin: false };
 
-export const UserContext = React.createContext(initState); 
+export const UserContext = React.createContext(initState);
 
-export function UserProvider({children}) {
+export function UserProvider({ children }) {
   const [state, dispatch] = useReducer(function (state, action) {
     switch (action.type) {
-      case 'change':
-        state.msg = 'hello'
-        return {...state};
+      case 'doLogin':
+        state.isLogin = true;
+        return { ...state };
+      case 'doLogout':
+        state.isLogin = false;
+        return { ...state };
       default:
         return state;
     }
   }, initState);
-  return <UserContext.Provider value={{state, dispatch}}>
+  return <UserContext.Provider value={{ state, dispatch }}>
     {children}
   </UserContext.Provider>
 }
