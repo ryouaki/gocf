@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Form, Button, Table, Modal } from 'react-bootstrap';
+import { Link } from "react-router-dom";
 
 export default function Apis () {
   const [ show, setShow ] = useState(false);
@@ -36,7 +37,7 @@ export default function Apis () {
             <td>Otto</td>
             <td>@mdo</td>
             <td>@mdo</td>
-            <td>@mdo</td>
+            <td><Link to="/edit">编辑</Link><div>删除</div></td>
           </tr>
           <tr>
             <td>2</td>
@@ -44,14 +45,15 @@ export default function Apis () {
             <td>Thornton</td>
             <td>@fat</td>
             <td>@fat</td>
-            <td>@fat</td>
+            <td><div>编辑</div><div>删除</div></td>
           </tr>
           <tr>
             <td>3</td>
-            <td colSpan={2}>Larry the Bird</td>
+            <td>Larry the Bird</td>
             <td>@twitter</td>
             <td>@twitter</td>
             <td>@twitter</td>
+            <td><div>编辑</div><div>删除</div></td>
           </tr>
         </tbody>
       </Table>
