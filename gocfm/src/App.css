@@ -10,6 +10,14 @@ html, body, #root {
   display: flex;
 }
 
+.pr {
+  position: relative;
+}
+
+.pa {
+  position: absolute;
+}
+
 /* Login start*/
 .m-login {
   width: 100%;
@@ -121,5 +129,29 @@ html, body, #root {
 
 .editor, #editor {
   height: 100%;
+  width: 100%;
+}
+
+.editor .file_name {
+  padding: 8px 8px;
+  font-size: 14px;
+  line-height: 14px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #bbb;
+  width: 100%;
+  cursor: pointer;
+}
+
+.editor .push-btn {
+  top: 4px;
+  right: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 14px;
+  color: blue;
+  font-weight: 900;
+  border: 1px solid blue;
+  padding: 4px 6px;
+  border-radius: 4px;
 }
 /* Apis end */
