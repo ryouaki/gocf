@@ -14,7 +14,7 @@ export default function Layout () {
           <Nav.Link href="/apis">API列表</Nav.Link>
         </Nav>
       </div>
-      <div>
+      <div className="main">
         <Outlet/>
       </div>
     </section>
