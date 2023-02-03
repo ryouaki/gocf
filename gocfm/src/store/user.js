@@ -1,6 +1,6 @@
 import React, { useReducer } from 'react';
 
-const initState = { isLogin: false };
+const initState = { isLogin: true };
 
 export const UserContext = React.createContext(initState);
 

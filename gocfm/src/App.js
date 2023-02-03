@@ -4,7 +4,8 @@ import './App.css';
 import Login from './page/login';
 import List from './page/list';
 import Edit from './page/edit';
-import Home from './page/home';
+import Apis from './page/apis';
+import Layout from './page/layout';
 
 import { UserContext } from './store/user';
 import { useContext } from 'react';
@@ -14,9 +15,15 @@ function App() {
 
   return (
     <Routes>
-      {!state.isLogin ? <Route path="/" element={<Login />} /> : <Route path="/" element={<Home />} />}
-      <Route path="/list" element={<List />} />
-      <Route path="/edit" element={<Edit />} />
+      {!state.isLogin ?
+        <Route path="/" element={<Login />} />
+        :
+        <Route path="/" element={<Layout />} >
+          <Route index element={<List />} />
+          <Route path="/apis" element={<Apis/>}/>
+          <Route path="/edit" element={<Edit />} />
+        </Route>
+      }
     </Routes>
   );
 }
