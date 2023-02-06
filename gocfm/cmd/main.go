@@ -23,10 +23,19 @@ func main() {
 	}
 	app.Use(session.Session(sessConf, gocfm.SessionStore))
 
-	app.Use(func(ctx *koa.Context, next koa.Next) {
+	gocfm.InitLog()
 
+	app.Use(func(ctx *koa.Context, next koa.Next) {
+		sess := ctx.GetData("session").(map[string]interface{})
+		if sess["isLogin"] == nil && ctx.Path != "/api/dologin" {
+			ctx.Status = 401
+			ctx.SetBody([]byte("Please sign in first"))
+		} else {
+			ctx.SetHeader("Content-Type", "application/json")
+			next()
+		}
 	})
-	controller.InitController(app)
+	controller.Init(app)
 
 	err := app.Run(8001) // 启动
 	if err != nil {      // 是否发生错误

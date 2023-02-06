@@ -25,7 +25,7 @@ export default function Apis () {
             <th>#</th>
             <th>名称</th>
             <th>类型</th>
-            <th>路径</th>
+            <th>请求路径</th>
             <th>模块名</th>
             <th>操作</th>
           </tr>
