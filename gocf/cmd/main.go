@@ -36,7 +36,7 @@ func main() {
 		}
 
 		rt := gocf.GetVM(time.Duration(1))
-		defer gocf.ReleaseVM(rt)
+		// defer gocf.ReleaseVM(rt)
 
 		var ret interface{} = nil
 		var wg sync.WaitGroup
@@ -72,12 +72,15 @@ func main() {
 		query := gocf.InterfaceToString(ctx.Query)
 		params := gocf.InterfaceToString(ctx.Params)
 		body := string(ctx.Body)
+		if body == "" {
+			body = "\"\""
+		}
 		headers := gocf.InterfaceToString(ctx.Req.Header)
 
 		exec := fmt.Sprintf("import exec from \"%s\";exec(\"%s\", %s, %s, %s, %s).then(resolve).catch(reject);", moduleName, method, query, params, body, headers)
 		fmt.Println(444, exec)
 		wfb, e := rt.Ctx.Eval(exec, "<input>", 1<<0)
-		defer wfb.Free()
+
 		if e != nil {
 			ctx.Status = 500
 			ctx.SetBody([]byte(e.ToString()))
@@ -95,6 +98,11 @@ func main() {
 			ctx.SetBody([]byte(gocf.InterfaceToString(data)))
 			// }
 		}
+		e.Free()
+		wfb.Free()
+		gocf.FreeModule("moduleName")
+		rt.Ctx.Free()
+		rt.VM.Free()
 	})
 
 	err := app.Run(8000) // 启动

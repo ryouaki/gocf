@@ -110,6 +110,6 @@ func RunAPI() {
 	// 	fmt.Println(C.GoString(C.JS_ToCString(rt.Ctx.P, err.P)))
 	// }
 	ReleaseVM(rt)
-	// rt.Ctx.Free()
-	// rt.VM.Free()
+	rt.Ctx.Free()
+	rt.VM.Free()
 }

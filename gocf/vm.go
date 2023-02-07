@@ -16,6 +16,7 @@ import (
 	"strconv"
 	"sync"
 	"time"
+	"unsafe"
 )
 
 var vmLock sync.Mutex
@@ -167,6 +168,18 @@ func InjectModule(code string, api ScriptApi) error {
 		}
 	}
 
+	return nil
+}
+
+func FreeModule(name string) error {
+	cStr := C.CString(name)
+	defer C.free(unsafe.Pointer(cStr))
+	for _, v := range vms {
+		m := C.JS_FindLoadedModule(v.Ctx.P, C.JS_NewAtom(v.Ctx.P, cStr))
+		if m != nil {
+			C.JS_FreeModule(v.Ctx.P, m)
+		}
+	}
 	return nil
 }
 
