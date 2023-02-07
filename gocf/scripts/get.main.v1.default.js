@@ -5,4 +5,3 @@ export default async function exec(method, query, params, body, headers) {
     data: "Hello World 1"
   }
 }
-

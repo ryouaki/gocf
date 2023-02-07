@@ -32,6 +32,8 @@ func init() {
 			}
 		} else if v == "-p" && len(os.Args) > idx+1 {
 			Root = os.Args[idx+1]
+		} else if v == "-m" && len(os.Args) > idx+1 {
+			MasterHost = os.Args[idx+1]
 		}
 	}
 }

@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/ryouaki/gocf"
+	"github.com/ryouaki/gocf/middleware"
 	"github.com/ryouaki/gocf/plugins"
 	"github.com/ryouaki/koa"
 )
@@ -22,10 +23,16 @@ func init() {
 	plugins.InitPlugins()
 	// 初始化JS引擎
 	gocf.InitGoCloudFunc()
+
+	gocf.DinMaster()
 }
 
 func main() {
 	app := koa.New()
+
+	middleware.Init(app)
+
+	gocf.InitAgent(app)
 
 	app.Use(func(ctx *koa.Context, next koa.Next) {
 		// // 获取api对应的js模块
@@ -100,7 +107,7 @@ func main() {
 		}
 		e.Free()
 		wfb.Free()
-		gocf.FreeModule("moduleName")
+		gocf.FreeModule(moduleName)
 		rt.Ctx.Free()
 		rt.VM.Free()
 	})
