@@ -6,7 +6,9 @@ package gocf
 #include "./invoke.h"
 */
 import "C"
-import "unsafe"
+import (
+	"unsafe"
+)
 
 var ctxCache = make(map[*C.JSContext]*JSContext)
 
@@ -91,4 +93,16 @@ func (ctx *JSContext) Free() {
 		delete(ctxCache, ctx.P)
 	}
 	C.JS_FreeContext(ctx.P)
+}
+
+// 查询模块
+func (ctx *JSContext) FindModule(name string) bool {
+	cStr := C.CString(name)
+	defer C.free(unsafe.Pointer(cStr))
+	m := C.JS_FindLoadedModule(ctx.P, C.JS_NewAtom(ctx.P, cStr))
+	if m != nil {
+		return true
+	} else {
+		return false
+	}
 }

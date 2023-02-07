@@ -71,27 +71,10 @@ func RunAPI() {
 	// 	return
 	// }
 
-	resolveCB := NewJSGoFunc(rt.Ctx, func(args []*JSValue, this *JSValue) *JSValue {
-		fmt.Println(222, args[0].GetPropertyKeys().ToString())
-		fmt.Println(222, args[0].GetProperty("data").ToString())
-		return nil
-	})
-
-	rejectCB := NewJSGoFunc(rt.Ctx, func(args []*JSValue, this *JSValue) *JSValue {
-		fmt.Println(args[0].ToString())
-		return nil
-	})
-
-	rt.Ctx.Global.SetProperty("resolve", NewFunc(rt.Ctx, resolveCB))
-	rt.Ctx.Global.SetProperty("reject", NewFunc(rt.Ctx, rejectCB))
-
 	exec := `
-	import exec from "a/b/c";
+	import exec from "aaa";
 
-	exec().then((res) => {
-		console.log(111, res)
-		resolve(res)
-	}).catch(reject)
+	exec()
 	`
 	wfb, _ := rt.Ctx.Eval(exec, "<input>", 1<<0)
 	defer wfb.Free()
@@ -100,18 +83,10 @@ func RunAPI() {
 		fmt.Println(r.ToString())
 	}
 
-	// // // fmt.Println(NewValue(rt.Ctx, result).IsException())
-	if r := rt.Ctx.GetException(); r != nil {
-		fmt.Println(r.ToString())
-	}
-	fmt.Println(222, C.JS_IsJobPending(rt.VM.P))
-	for C.JS_IsJobPending(rt.VM.P) > 0 {
-		C.JS_ExecutePendingJob(rt.VM.P, &rt.Ctx.P)
-	}
 	// if err != nil {
 	// 	fmt.Println(C.GoString(C.JS_ToCString(rt.Ctx.P, err.P)))
 	// }
-	ReleaseVM(rt)
-	rt.Ctx.Free()
-	rt.VM.Free()
+	// ReleaseVM(rt)
+	// rt.Ctx.Free()
+	// rt.VM.Free()
 }
