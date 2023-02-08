@@ -39,10 +39,15 @@ func InitAgent(agent *koa.Application) {
 	})
 	agent.Get("/mapi/check", doCheck)
 	agent.Post("/mapi/scripts", doSyncScripts)
+	agent.Post("/mapi/release", doRelease)
 }
 
 func doCheck(ctx *koa.Context, next koa.Next) {
 	ctx.SetBody(buildResp(false, "", ""))
+}
+
+func doRelease(ctx *koa.Context, next koa.Next) {
+
 }
 
 /**
