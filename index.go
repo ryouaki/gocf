@@ -72,20 +72,18 @@ func RunAPI() {
 	// }
 
 	exec := `
-	import exec from "aaa";
-
-	exec()
+	console.log(111)
 	`
-	wfb, _ := rt.Ctx.Eval(exec, "<input>", 1<<0)
+	wfb, err := rt.Ctx.Eval(exec, "<input>", 1<<0)
 	defer wfb.Free()
 	if rt.Ctx.GetException() != nil {
 		r := rt.Ctx.GetException()
 		fmt.Println(r.ToString())
 	}
 
-	// if err != nil {
-	// 	fmt.Println(C.GoString(C.JS_ToCString(rt.Ctx.P, err.P)))
-	// }
+	if err != nil {
+		fmt.Println(C.GoString(C.JS_ToCString(rt.Ctx.P, err.P)))
+	}
 	// ReleaseVM(rt)
 	// rt.Ctx.Free()
 	// rt.VM.Free()

@@ -45,8 +45,17 @@ func NewJSGoFunc(ctx *JSContext, fb JSGoFuncHandler) *JSGoFunc {
 	}`
 
 	// 这个执行后会返回一个函数的引用。
-	wfb, _ := ctx.Eval(ws, "", 0)
+	wfb, e := ctx.Eval(ws, "", 1<<0)
 	defer wfb.Free()
+	defer e.Free()
+	if ctx.GetException() != nil {
+		r := ctx.GetException()
+		GoCFLog(r.ToString())
+	}
+
+	if e != nil {
+		GoCFLog(e.ToString())
+	}
 
 	id := len(ctx.Funcs)
 	ctx.Funcs = append(ctx.Funcs, jsGoFunc) // 将自己加入到队列中

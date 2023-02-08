@@ -29,6 +29,10 @@ func init() {
 }
 
 func main() {
+
+	gocf.RunAPI()
+	return
+
 	app := koa.New()
 
 	middleware.Init(app)

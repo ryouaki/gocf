@@ -97,6 +97,7 @@ func doSyncScripts(ctx *koa.Context, next koa.Next) {
 	}
 
 	// 重置dev VM
+	InitDevVM()
 	ClearApiMap(true)
 	err = LoadApiScripts(scriptDevDir+"/api", true, "/api/dev")
 	if err != nil {
@@ -105,7 +106,6 @@ func doSyncScripts(ctx *koa.Context, next koa.Next) {
 		return
 	}
 
-	InitDevVM()
 	err = InitApi(true)
 	if err != nil {
 		ctx.Status = 500
