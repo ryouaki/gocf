@@ -9,6 +9,7 @@ package main
 import "C"
 import (
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -40,10 +41,16 @@ func main() {
 		if err != nil {
 			ctx.Status = 404
 			ctx.SetBody([]byte(err.Error()))
+			return
 		}
 
-		rt := gocf.GetVM(time.Duration(1))
-		// defer gocf.ReleaseVM(rt)
+		var rt *gocf.JSVM
+		if strings.HasPrefix(ctx.Path, "/api/dev") {
+			rt = gocf.GetDevVM()
+		} else {
+			rt = gocf.GetVM(time.Duration(1))
+		}
+		defer gocf.ReleaseVM(rt)
 
 		var ret interface{} = nil
 		var wg sync.WaitGroup
@@ -52,9 +59,14 @@ func main() {
 		resolveCb := gocf.NewJSGoFunc(rt.Ctx, func(args []*gocf.JSValue, this *gocf.JSValue) *gocf.JSValue {
 			val := args[0]
 			data := make(map[string]interface{})
-			data["error"] = val.GetProperty("error").ToString()
-			data["data"] = val.GetProperty("data").ToString()
+			if val.GetProperty("error") != nil {
+				data["error"] = val.GetProperty("error").ToString()
+			}
+			if val.GetProperty("data") != nil {
+				data["data"] = val.GetProperty("data").ToString()
+			}
 			ret = data
+
 			wg.Done()
 			return nil
 		})
@@ -107,9 +119,8 @@ func main() {
 		}
 		e.Free()
 		wfb.Free()
-		gocf.FreeModule(moduleName)
-		rt.Ctx.Free()
-		rt.VM.Free()
+		// rt.Ctx.Free()
+		// rt.VM.Free()
 	})
 
 	err := app.Run(8000) // 启动

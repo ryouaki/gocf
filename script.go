@@ -13,7 +13,6 @@ type ScriptApi struct {
 	Path   string // api地址
 	Module string // 模块名
 	Method string // api方法
-	Ver    string // api脚本版本
 	File   string // 脚本文件地址
 }
 
@@ -38,50 +37,72 @@ var methods = []string{
 }
 
 var ScriptApiMap = make([]ScriptApi, 0, 4)
+var ScriptDevApiMap = make([]ScriptApi, 0, 4)
+
+func ClearApiMap(isDev bool) {
+	if isDev {
+		ScriptDevApiMap = ScriptDevApiMap[0:0]
+	} else {
+		ScriptApiMap = ScriptApiMap[0:0]
+	}
+}
 
 // 根据参数指定目录加载脚本
-func LoadApiScripts(root string) {
+func LoadApiScripts(root string, isDev bool, parent string) error {
 	GoCFLog(root)
 
 	// 遍历脚本文件目录
 	dir, err := ioutil.ReadDir(root)
 	if err != nil {
 		GoCFLog("Error", "Load Script file failed!")
-		return
+		return err
 	}
 
 	for _, f := range dir {
 		name := f.Name()
-		// 过滤掉非js结尾的文件和目录
-		if f.IsDir() || !strings.HasSuffix(name, "js") {
+		if f.IsDir() {
+			LoadApiScripts(root+"/"+name, isDev, parent+"/"+name)
+		} else if !strings.HasSuffix(name, "js") {
 			continue
+		} else {
+			apiInfo := strings.Split(name, ".")
+			if IndexOfStringArray(methods, apiInfo[0]) == -1 {
+				GoCFLog(apiInfo[0] + " is not currect")
+				continue
+			}
+
+			path := parent + "/" + apiToPath(apiInfo[1])
+			api := ScriptApi{
+				Path:   path,
+				Module: apiToPath(path),
+				Method: apiInfo[0],
+				File:   root + "/" + name,
+			}
+
+			if isDev {
+				ScriptDevApiMap = append(ScriptApiMap, api)
+			} else {
+				ScriptApiMap = append(ScriptApiMap, api)
+			}
 		}
-		apiInfo := strings.Split(name, ".")
-		// 只有以default结尾的api才是发布的api
-		if len(apiInfo) < 4 || apiInfo[3] != "default" {
-			continue
-		}
-		if IndexOfStringArray(methods, apiInfo[0]) == -1 {
-			continue
-		}
-		api := ScriptApi{
-			Path:   "/" + apiToPath(apiInfo[1]),
-			Module: apiToPath(apiInfo[1]),
-			Method: apiInfo[0],
-			Ver:    apiInfo[2],
-			File:   root + "/" + name,
-		}
-		ScriptApiMap = append(ScriptApiMap, api)
 	}
+
+	return nil
 }
 
 // 配置路径转访问路由路径
 func apiToPath(path string) string {
-	return strings.ReplaceAll(path, "_", "/")
+	return strings.ReplaceAll(path, "/", "_")
 }
 
 func GetApiModule(method string, path string) (string, error) {
-	for _, v := range ScriptApiMap {
+	var scripts []ScriptApi
+	if strings.HasPrefix(path, "/api/dev") {
+		scripts = ScriptDevApiMap
+	} else {
+		scripts = ScriptApiMap
+	}
+	for _, v := range scripts {
 		if method == v.Method && path == v.Path {
 			return v.Module, nil
 		}

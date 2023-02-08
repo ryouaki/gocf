@@ -3,14 +3,24 @@ package gocf
 
 import (
 	"encoding/json"
-	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/ryouaki/koa"
 )
+
+// 更新脚本文件接口参数结构定义
+type ScriptParams struct {
+	Files []ScriptFile `json:"files"`
+}
+type ScriptFile struct {
+	Path   string `json:"path"`
+	Script string `json:"script"`
+}
+
+// end
 
 func DinMaster() {
 	ret, err := http.NewRequest("GET", MasterHost+"/api/din", nil)
@@ -28,141 +38,97 @@ func InitAgent(agent *koa.Application) {
 		ctx.SetHeader("Content-Type", "application/json")
 	})
 	agent.Get("/mapi/check", doCheck)
-	agent.Post("/mapi/reset", doReset)
-	agent.Post("/mapi/update", doUpdate)
+	agent.Post("/mapi/scripts", doSyncScripts)
 }
 
 func doCheck(ctx *koa.Context, next koa.Next) {
-	ctx.SetBody(makeRet(true, "", ""))
+	ctx.SetBody(buildResp(false, "", ""))
 }
 
-func doReset(ctx *koa.Context, next koa.Next) {
-
-}
-
-/*
-* === api ===
-* method:string 方法名
-* script:string 脚本代码
-* api:string api地址
-* === module ===
-* name: string 模块名
-* script: string 脚本代码
+/**
+ * 增量同步脚本接口
+ * {
+ *		files: [
+ *				{
+ *						path: '',
+ *						script: ''
+ *				}
+ *    ]
+ * }
  */
-func doUpdate(ctx *koa.Context, next koa.Next) {
-	body := ctx.Body
-	if body == nil {
+func doSyncScripts(ctx *koa.Context, next koa.Next) {
+	if ctx.Body == nil {
 		ctx.Status = 400
-		ctx.SetBody(makeRet(true, "Params Error", ""))
+		ctx.SetBody(buildResp(true, "Params Error", "参数为空"))
 		return
 	}
 
-	data := make(map[string]interface{})
-	err := json.Unmarshal(body, &data)
+	data := ScriptParams{}
+	err := json.Unmarshal(ctx.Body, &data)
 	if err != nil {
 		ctx.Status = 400
-		ctx.SetBody(makeRet(true, "Params Error", ""))
+		ctx.SetBody(buildResp(true, "Params Error", "参数格式错误"))
 		return
 	}
 
-	var isApi = true
-	var method = ""
-	var script = ""
-	var name = ""
-	var api = ""
-	for k, v := range data {
-		if k == "method" {
-			method = InterfaceToString(v)
-			method = strings.TrimSpace(method)
-		} else if k == "script" {
-			script = InterfaceToString(v)
-			script = strings.TrimSpace(script)
-		} else if k == "name" {
-			isApi = false
-			name = InterfaceToString(v)
-		} else if k == "api" {
-			api = InterfaceToString(v)
-		} else {
-			ctx.Status = 400
-			ctx.SetBody(makeRet(true, "Params Error", k+" is not be need"))
-			return
-		}
-	}
-
-	if isApi && (method == "" || script == "" || api == "") {
-		ctx.Status = 400
-		ctx.SetBody(makeRet(true, "Params Error", ""))
-		return
-	} else if !isApi && (script == "" || name == "") {
-		ctx.Status = 400
-		ctx.SetBody(makeRet(true, "Params Error", ""))
+	if len(data.Files) <= 0 {
+		ctx.SetBody(buildResp(false, "", ""))
 		return
 	}
 
-	dir := mkDir(isApi)
+	scriptDevDir := strings.Replace(Root, "scripts", "scripts_dev", -1)
+	os.RemoveAll(scriptDevDir)
+	os.MkdirAll(scriptDevDir, 0750)
 
-	fileName := ""
-	if isApi {
-		fileName = fmt.Sprintf("%s.%s.js", method, strings.ReplaceAll(api, "/", "_"))
-	} else {
-		fileName = fmt.Sprintf("%s.js", strings.ReplaceAll(name, "/", "_"))
-	}
+	// 拷贝文件到临时目录
+	CopyTo(Root, scriptDevDir)
 
-	/* 校验语法*/
-	rt := NewRuntime()
-	c := rt.NewContext()
-
-	v, e := c.Eval(script, "test", 1<<0|1<<5)
-	defer func() {
-		v.Free()
-		e.Free()
-		c.Free()
-		rt.Free()
-	}()
-	if c.GetException() != nil {
-		r := c.GetException()
-		ctx.Status = 400
-		ctx.SetBody(makeRet(true, "Script Error", r.ToString()))
-		return
-	}
-
-	fmt.Println(c.FindModule("test"))
-	/* 校验语法*/
-
-	err = ioutil.WriteFile(dir+"/"+fileName, []byte(script), 0666)
+	// 做增量覆盖
+	err = ReplaceScript(data, scriptDevDir)
 	if err != nil {
 		ctx.Status = 500
-		ctx.SetBody(makeRet(true, "System Error", fileName+" Update failed"))
+		ctx.SetBody(buildResp(true, "Server Error", "解析错误，请重试"))
 		return
 	}
 
-	ctx.SetBody(makeRet(false, "", "ok"))
-}
-
-func mkDir(isApi bool) string {
-	name := ""
-	if isApi {
-		name = "/apis"
-	} else {
-		name = "/modules"
-	}
-	err := os.Mkdir(Root+name, 0750)
-	if err != nil && !os.IsExist(err) && !os.IsNotExist(err) {
-		GoCFLog(err)
+	// 重置dev VM
+	ClearApiMap(true)
+	err = LoadApiScripts(scriptDevDir+"/api", true, "/api/dev")
+	if err != nil {
+		ctx.Status = 500
+		ctx.SetBody(buildResp(true, "Server Error", "开发环境加载失败，请重试"))
+		return
 	}
 
-	return Root + name
-}
-
-func checkIsExist(name string) bool {
-	_, err := os.Stat(Root + "/" + name)
-	if os.IsExist(err) {
-		return true
+	InitDevVM()
+	err = InitApi(true)
+	if err != nil {
+		ctx.Status = 500
+		ctx.SetBody(buildResp(true, "Server Error", "开发环境加载失败，请重试"))
+		return
 	}
-	return false
+
+	ctx.SetBody(buildResp(false, "", "文件同步成功"))
 }
 
-func makeRet(err bool, msg string, data interface{}) []byte {
+func ReplaceScript(files ScriptParams, distDir string) error {
+	for _, f := range files.Files {
+		filename := distDir + "/" + f.Path
+		dir := filepath.Dir(filename)
+		err := os.MkdirAll(dir, 0750)
+		if err != nil && !os.IsExist(err) {
+			return err
+		}
+		data := []byte(f.Script)
+		err = os.WriteFile(filename, data, 0750)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func buildResp(err bool, msg string, data interface{}) []byte {
 	e := ""
 	if err {
 		e = `"error":true`

@@ -3,6 +3,7 @@ package gocf
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"strconv"
 )
 
@@ -88,4 +89,60 @@ func GoCFLog(args ...any) {
 		goArgs = append(goArgs, v)
 	}
 	fmt.Println(goArgs...)
+}
+
+func CopyTo(src string, dist string) error {
+	fs, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+	if fs.IsDir() {
+		files, err := os.ReadDir(src)
+		if err != nil {
+			return err
+		}
+		for _, file := range files {
+			if file.IsDir() {
+				err = os.MkdirAll(dist+"/"+file.Name(), 0750)
+				if err != nil {
+					return err
+				}
+				err = CopyTo(src+"/"+file.Name(), dist+"/"+file.Name())
+				if err != nil {
+					return err
+				}
+			} else {
+				err = CpFile(src+"/"+file.Name(), dist)
+				if err != nil {
+					return err
+				}
+			}
+		}
+	} else {
+		err = CpFile(src, dist)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func CpFile(src string, dist string) error {
+	fs, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+	if fs.IsDir() {
+		return fmt.Errorf("Not file")
+	}
+	data, read_err := os.ReadFile(src)
+	if read_err != nil {
+		return read_err
+	}
+	write_err := os.WriteFile(dist+"/"+fs.Name(), data, 0750)
+	if write_err != nil {
+		return write_err
+	}
+
+	return nil
 }

@@ -40,9 +40,9 @@ func init() {
 
 // 加载JS相关配置文件与引擎
 func InitGoCloudFunc() {
-	LoadApiScripts(Root)
+	LoadApiScripts(Root+"/api", false, "/api")
 	InitVM(Nums)
-	InitApi()
+	InitApi(false)
 }
 
 func RunAPI() {

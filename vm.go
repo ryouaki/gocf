@@ -11,7 +11,6 @@ import "C"
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strconv"
 	"sync"
@@ -35,7 +34,8 @@ type Plugin struct {
 }
 
 // 引擎缓存池
-var vms = make([]JSVM, 0, 4)
+var vms = make([]*JSVM, 0, 4)
+var devVm *JSVM = nil
 
 // Go插件缓存池
 var pluginMap = make(map[string][]*Plugin)
@@ -48,29 +48,53 @@ func InitVM(nums int) {
 
 	// 根据启动参数-n初始化引擎数量
 	for i := 0; i < nums; i++ {
-		rt := NewRuntime()     // 初始化引擎
-		ctx := rt.NewContext() // 初始化执行上下文
-
-		// 初始化插件
-		for key, pls := range pluginMap {
-			obj := NewObject(ctx)
-			for _, fb := range pls {
-				funcValue := &JSValue{
-					Ctx: ctx,
-					P:   NewJSGoFunc(ctx, fb.Cb).P,
-				}
-				obj.SetProperty(fb.Name, funcValue)
-			}
-			ctx.Global.SetProperty(key, obj)
-		}
-
-		vms = append(vms, JSVM{
-			VM:     rt,
-			Ctx:    ctx,
-			IsFree: true,
-		})
+		vms = append(vms, buildVM())
 	}
 	GoCFLog("initialized " + strconv.Itoa(nums) + " JSVM")
+}
+
+func InitDevVM() *JSVM {
+	if devVm != nil {
+		FreeDevVM()
+	}
+	devVm = buildVM()
+	return devVm
+}
+
+func GetDevVM() *JSVM {
+	return devVm
+}
+
+func FreeDevVM() {
+	if devVm != nil {
+		devVm.Ctx.Free()
+		devVm.VM.Free()
+	}
+	devVm = nil
+}
+
+func buildVM() *JSVM {
+	rt := NewRuntime()     // 初始化引擎
+	ctx := rt.NewContext() // 初始化执行上下文
+
+	// 初始化插件
+	for key, pls := range pluginMap {
+		obj := NewObject(ctx)
+		for _, fb := range pls {
+			funcValue := &JSValue{
+				Ctx: ctx,
+				P:   NewJSGoFunc(ctx, fb.Cb).P,
+			}
+			obj.SetProperty(fb.Name, funcValue)
+		}
+		ctx.Global.SetProperty(key, obj)
+	}
+
+	return &JSVM{
+		VM:     rt,
+		Ctx:    ctx,
+		IsFree: true,
+	}
 }
 
 // 释放虚拟机
@@ -96,7 +120,7 @@ func GetVM(ot time.Duration) *JSVM {
 			for _, v := range vms {
 				if v.IsFree {
 					v.IsFree = false
-					vm = &v
+					vm = v
 					rt <- true
 				}
 			}
@@ -133,38 +157,56 @@ func RegistPlugin(name string, fbs []*Plugin) error {
 }
 
 // 初始化api
-func InitApi() {
-	// 将Script脚本注入到各个VM的Ctx中。
-	for _, v := range ScriptApiMap {
-		fb, openError := os.OpenFile(v.File, os.O_RDONLY, 0111)
-		if openError != nil {
-			fb.Close()
-			GoCFLog("Error", v.File+" Open failed", openError.Error())
-			return
-		}
-
-		// 获取完整脚本文件
-		code, readError := ioutil.ReadAll(fb)
-		if readError != nil {
-			GoCFLog("Error", v.File+" Read failed", readError.Error())
-			fb.Close()
-			return
-		}
-
-		if evalError := InjectModule(string(code), v); evalError != nil {
-			GoCFLog("Error", v.File+" Eval failed", evalError.Error())
-			fb.Close()
-			return
-		}
-		fb.Close()
+func InitApi(isDev bool) error {
+	var apis []ScriptApi
+	if isDev {
+		apis = ScriptDevApiMap
+	} else {
+		apis = ScriptApiMap
 	}
+	// 将Script脚本注入到各个VM的Ctx中。
+	for _, v := range apis {
+		// 获取完整脚本文件
+		code, err := os.ReadFile(v.File)
+		if err != nil {
+			GoCFLog("Error", v.File+" Read failed", err.Error())
+			return err
+		}
+		GoCFLog("Init API " + v.Method + " " + v.Module + " " + v.Path)
+		if err = InjectModule(string(code), v, isDev); err != nil {
+			GoCFLog("Error", v.File+" Eval failed", err.Error())
+			return err
+		}
+	}
+	return nil
 }
 
-func InjectModule(code string, api ScriptApi) error {
-	for _, v := range vms {
-		_, err := v.Ctx.Eval(code, api.Module, 1<<0|1<<5)
-		if v.Ctx.GetException() != nil {
-			return fmt.Errorf(err.ToString())
+func buildModule(m *JSVM, code string, name string) error {
+	_, err := m.Ctx.Eval(code, name, 1<<0|1<<5)
+	defer err.Free()
+	if m.Ctx.GetException() != nil {
+		return fmt.Errorf(err.ToString())
+	}
+	if err != nil {
+		return fmt.Errorf(err.ToString())
+	}
+	return nil
+}
+
+func InjectModule(code string, api ScriptApi, isDev bool) error {
+	if isDev {
+		err := buildModule(devVm, code, api.Module)
+		if err != nil {
+			return err
+		}
+		GoCFLog("Inject module " + api.Module)
+	} else {
+		for _, v := range vms {
+			err := buildModule(v, code, api.Module)
+			if err != nil {
+				return err
+			}
+			GoCFLog("Inject module " + api.Module)
 		}
 	}
 

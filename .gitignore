@@ -18,19 +18,7 @@ __debug_bin
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
-/gocfm/node_modules/
-/gocfm/.env.local
-/gocfm/.umirc.local.ts
-/gocfm/config/config.local.ts
-/gocfm/src/.umi
-/gocfm/src/.umi-production
-/gocfm/src/.umi-test
-/gocfm/.umi
-/gocfm/.umi-production
-/gocfm/.umi-test
-/gocfm/dist
-/gocfm/.mfsu
-/gocfm/.swc
-/gocfm/bin
+
 /gocf/bin
 .DS_Store
+scripts_dev
