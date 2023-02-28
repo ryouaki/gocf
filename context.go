@@ -121,24 +121,26 @@ func NewJSGoFunc(ctx *JSContext, fb JSGoFuncHandler) *JSGoFunc {
 	jsGoFunc.Fb = fb
 
 	invokeFunc := ctx.Global.GetProperty("$$invoke")
-	if invokeFunc == nil {
+	if invokeFunc == nil || !invokeFunc.IsFunction() {
 		// 注入bridge
 		ws := `globalThis.$$invoke = function (invoke, id) {
-			var argvs = [id]
-			for (var i = 0; i < arguments.length; i++) {
-				var argv = arguments[i];
-				argvs.push(argv)
+			return function () {
+				var argvs = [id]
+				for (var i = 0; i < arguments.length; i++) {
+					var argv = arguments[i];
+					argvs.push(argv)
+				}
+				var ret = invoke.apply(this, argvs);
+				try {
+					objData = JSON.parse(ret.data)
+					ret.data = objData
+				} catch(e) {}
+				return ret
 			}
-			var ret = invoke.apply(this, argvs);
-			try {
-				objData = JSON.parse(ret.data)
-				ret.data = objData
-			} catch(e) {}
-			return ret
 		};`
 
 		// 这个执行后会返回一个函数的引用。
-		wfb, e := ctx.Eval(ws, "", 1<<0)
+		wfb, e := ctx.Eval(ws, "<input>", 1<<0)
 		defer wfb.Free()
 		defer e.Free()
 
@@ -151,7 +153,7 @@ func NewJSGoFunc(ctx *JSContext, fb JSGoFuncHandler) *JSGoFunc {
 			GoCFLog(e.ToString())
 		}
 
-		invokeFunc = wfb
+		invokeFunc = ctx.Global.GetProperty("$$invoke")
 	}
 
 	id := len(ctx.Funcs)

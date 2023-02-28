@@ -161,6 +161,7 @@ func GetVM(ot time.Duration) *JSVM {
 					v.IsFree = false
 					vm = v
 					rt <- true
+					return
 				}
 			}
 			// 不能一直占用cpu，需要休眠4ms

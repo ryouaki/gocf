@@ -42,8 +42,7 @@ func main() {
 			return
 		}
 
-		var rt *gocf.JSVM
-		rt = gocf.GetVM(time.Duration(1))
+		rt := gocf.GetVM(time.Duration(1))
 
 		defer gocf.ReleaseVM(rt)
 
@@ -94,7 +93,7 @@ func main() {
 
 		exec := fmt.Sprintf("import exec from \"%s\";console.log(1111);exec(\"%s\", %s, %s, %s, %s).then(resolve).catch(reject);", moduleName, method, query, params, body, headers)
 		fmt.Println(444, exec)
-		wfb, e := rt.Ctx.Eval(exec, "<input>", 1<<0)
+		wfb, e := rt.Ctx.Eval(exec, "", 1)
 
 		if e != nil {
 			ctx.Status = 500
@@ -124,3 +123,34 @@ func main() {
 		gocf.GoCFLog(err)
 	}
 }
+
+// func main() {
+// 	gocf.RunGoCF()
+// 	rt := gocf.GetVM(time.Duration(1))
+// 	// _, err := rt.Ctx.Eval(`
+// 	// export default function () {
+// 	// 	return "222"
+// 	// }
+// 	// `, "tt/aa.js", 1<<0|1<<5)
+// 	// if rt.Ctx.GetException() != nil {
+// 	// 	fmt.Println(C.GoString(C.JS_ToCString(rt.Ctx.P, err.P)))
+// 	// 	return
+// 	// }
+// 	// if err != nil {
+// 	// 	fmt.Println(err.ToString())
+// 	// }
+
+// 	exec := `console.log(111);`
+// 	wfb, e := rt.Ctx.Eval(exec, "", 1)
+// 	defer wfb.Free()
+// 	if rt.Ctx.GetException() != nil {
+// 		r := rt.Ctx.GetException()
+// 		fmt.Println(r.ToString() + "1")
+// 	}
+
+// 	if e != nil {
+// 		fmt.Println(e.ToString() + "2")
+// 	}
+
+// 	// fmt.Println(wfb.ToString() + "3")
+// }

@@ -16,8 +16,7 @@ import (
 func initConsole() []*gocf.Plugin {
 	plugins := make([]*gocf.Plugin, 0, 1)
 	plugin := makePlugin("log", func(args []*gocf.JSValue, this *gocf.JSValue) *gocf.JSValue {
-		goArgs := make([]any, 1, 4)
-		goArgs[0] = "[GoCF]:"
+		goArgs := make([]any, 0, 4)
 		for _, v := range args {
 			val := v.ToString()
 			goArgs = append(goArgs, val)
