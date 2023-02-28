@@ -32,21 +32,16 @@ func DinMaster() {
 }
 
 func InitAgent(agent *koa.Application) {
-
-	agent.Use(func(ctx *koa.Context, next koa.Next) {
-		next()
-		ctx.SetHeader("Content-Type", "application/json")
-	})
 	agent.Get("/mapi/check", doCheck)
 	agent.Post("/mapi/scripts", doSyncScripts)
-	agent.Post("/mapi/release", doRelease)
+	agent.Post("/mapi/restart", doRestart)
 }
 
 func doCheck(ctx *koa.Context, next koa.Next) {
 	ctx.SetBody(buildResp(false, "", ""))
 }
 
-func doRelease(ctx *koa.Context, next koa.Next) {
+func doRestart(ctx *koa.Context, next koa.Next) {
 
 }
 
@@ -81,37 +76,40 @@ func doSyncScripts(ctx *koa.Context, next koa.Next) {
 		return
 	}
 
-	scriptDevDir := strings.Replace(Root, "scripts", "scripts_dev", -1)
-	os.RemoveAll(scriptDevDir)
-	os.MkdirAll(scriptDevDir, 0750)
+	scriptTmp := strings.Replace(Root, "scripts", "scripts_tmp", -1)
+	os.RemoveAll(scriptTmp)
+	os.MkdirAll(scriptTmp, 0750)
 
 	// 拷贝文件到临时目录
-	CopyTo(Root, scriptDevDir)
+	CopyTo(Root, scriptTmp)
 
 	// 做增量覆盖
-	err = ReplaceScript(data, scriptDevDir)
+	err = ReplaceScript(data, scriptTmp)
 	if err != nil {
 		ctx.Status = 500
 		ctx.SetBody(buildResp(true, "Server Error", "解析错误，请重试"))
 		return
 	}
 
-	// 重置dev VM
-	InitDevVM()
-	ClearApiMap(true)
-	err = LoadApiScripts(scriptDevDir+"/api", true, "/api/dev")
+	os.RemoveAll(Root)
+	os.MkdirAll(Root, 0750)
+
+	CopyTo(scriptTmp, Root)
+
+	ClearApiMap()
+	err = LoadApiScripts(scriptTmp+"/api", "/api")
 	if err != nil {
 		ctx.Status = 500
 		ctx.SetBody(buildResp(true, "Server Error", "开发环境加载失败，请重试"))
 		return
 	}
 
-	err = InitApi(true)
-	if err != nil {
-		ctx.Status = 500
-		ctx.SetBody(buildResp(true, "Server Error", "开发环境加载失败，请重试"))
-		return
-	}
+	// err = InitApi()
+	// if err != nil {
+	// 	ctx.Status = 500
+	// 	ctx.SetBody(buildResp(true, "Server Error", "开发环境加载失败，请重试"))
+	// 	return
+	// }
 
 	ctx.SetBody(buildResp(false, "", "文件同步成功"))
 }
@@ -131,29 +129,4 @@ func ReplaceScript(files ScriptParams, distDir string) error {
 		}
 	}
 	return nil
-}
-
-func buildResp(err bool, msg string, data interface{}) []byte {
-	e := ""
-	if err {
-		e = `"error":true`
-	} else {
-		e = `"error":false`
-	}
-
-	m := ""
-	if msg != "" {
-		m = `"msg":"` + msg + `"`
-	} else {
-		m = `"msg":""`
-	}
-
-	d := ""
-	if data != nil {
-		d = `"data":` + InterfaceToString(data)
-	} else {
-		d = `"data":null`
-	}
-
-	return []byte("{" + e + "," + m + "," + d + "}")
 }

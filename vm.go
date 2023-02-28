@@ -208,8 +208,7 @@ func RegistPlugin(name string, fbs []*Plugin) error {
 
 // ******************** Api 初始化 Start *************************
 func InitApi() error {
-	var apis []ScriptApi
-	apis = ScriptApiMap
+	apis := ScriptApiMap
 
 	// 将Script脚本注入到各个VM的Ctx中。
 	for _, v := range apis {

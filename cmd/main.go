@@ -26,7 +26,6 @@ func init() {
 
 func main() {
 	gocf.RunGoCF()
-	return
 
 	app := koa.New()
 

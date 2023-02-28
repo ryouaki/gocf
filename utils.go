@@ -161,3 +161,28 @@ func GetApiModule(method string, path string) (string, error) {
 	}
 	return "", fmt.Errorf("Api not found!")
 }
+
+func buildResp(err bool, msg string, data interface{}) []byte {
+	e := ""
+	if err {
+		e = `"error":true`
+	} else {
+		e = `"error":false`
+	}
+
+	m := ""
+	if msg != "" {
+		m = `"msg":"` + msg + `"`
+	} else {
+		m = `"msg":""`
+	}
+
+	d := ""
+	if data != nil {
+		d = `"data":` + InterfaceToString(data)
+	} else {
+		d = `"data":null`
+	}
+
+	return []byte("{" + e + "," + m + "," + d + "}")
+}
