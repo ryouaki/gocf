@@ -120,32 +120,38 @@ func NewJSGoFunc(ctx *JSContext, fb JSGoFuncHandler) *JSGoFunc {
 	jsGoFunc.Ctx = ctx
 	jsGoFunc.Fb = fb
 
-	// 注入bridge
-	ws := `(invoke, id) => function () {
-		var argvs = [id]
-		for (var i = 0; i < arguments.length; i++) {
-			var argv = arguments[i];
-			argvs.push(argv)
+	invokeFunc := ctx.Global.GetProperty("$$invoke")
+	if invokeFunc == nil {
+		// 注入bridge
+		ws := `globalThis.$$invoke = function (invoke, id) {
+			var argvs = [id]
+			for (var i = 0; i < arguments.length; i++) {
+				var argv = arguments[i];
+				argvs.push(argv)
+			}
+			var ret = invoke.apply(this, argvs);
+			try {
+				objData = JSON.parse(ret.data)
+				ret.data = objData
+			} catch(e) {}
+			return ret
+		};`
+
+		// 这个执行后会返回一个函数的引用。
+		wfb, e := ctx.Eval(ws, "", 1<<0)
+		defer wfb.Free()
+		defer e.Free()
+
+		if ctx.GetException() != nil {
+			r := ctx.GetException()
+			GoCFLog(r.ToString())
 		}
-		var ret = invoke.apply(this, argvs);
-		try {
-			objData = JSON.parse(ret.data)
-			ret.data = objData
-		} catch(e) {}
-		return ret
-	}`
 
-	// 这个执行后会返回一个函数的引用。
-	wfb, e := ctx.Eval(ws, "", 1<<0)
-	defer wfb.Free()
-	defer e.Free()
-	if ctx.GetException() != nil {
-		r := ctx.GetException()
-		GoCFLog(r.ToString())
-	}
+		if e != nil {
+			GoCFLog(e.ToString())
+		}
 
-	if e != nil {
-		GoCFLog(e.ToString())
+		invokeFunc = wfb
 	}
 
 	id := len(ctx.Funcs)
@@ -157,7 +163,7 @@ func NewJSGoFunc(ctx *JSContext, fb JSGoFuncHandler) *JSGoFunc {
 		cId.P,
 	}
 
-	jsGoFunc.P = C.JS_Call(ctx.P, wfb.P, NewNull(ctx).P, 2, &args[0])
+	jsGoFunc.P = C.JS_Call(ctx.P, invokeFunc.P, NewNull(ctx).P, 2, &args[0])
 
 	return jsGoFunc
 }

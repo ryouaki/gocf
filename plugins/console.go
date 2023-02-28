@@ -9,8 +9,6 @@ package plugins
 import "C"
 
 import (
-	"fmt"
-
 	"github.com/ryouaki/gocf"
 )
 
@@ -24,7 +22,7 @@ func initConsole() []*gocf.Plugin {
 			val := v.ToString()
 			goArgs = append(goArgs, val)
 		}
-		fmt.Println(goArgs...)
+		gocf.GoCFLog(goArgs...)
 		return nil
 	})
 

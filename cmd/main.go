@@ -50,6 +50,20 @@ func main() {
 		var ret interface{} = nil
 		var wg sync.WaitGroup
 		wg.Add(1)
+
+		// 实例化成功调用返回
+		rejectCb := gocf.NewJSGoFunc(rt.Ctx, func(args []*gocf.JSValue, this *gocf.JSValue) *gocf.JSValue {
+			ctx.Status = 400
+			for _, v := range args {
+				data := gocf.InterfaceToString(v)
+				ret = data
+				wg.Done()
+				return nil
+			}
+			wg.Done()
+			return nil
+		})
+
 		// 实例化成功调用返回
 		resolveCb := gocf.NewJSGoFunc(rt.Ctx, func(args []*gocf.JSValue, this *gocf.JSValue) *gocf.JSValue {
 			val := args[0]
@@ -66,19 +80,6 @@ func main() {
 			return nil
 		})
 
-		// 实例化成功调用返回
-		rejectCb := gocf.NewJSGoFunc(rt.Ctx, func(args []*gocf.JSValue, this *gocf.JSValue) *gocf.JSValue {
-			ctx.Status = 400
-			for _, v := range args {
-				data := gocf.InterfaceToString(v)
-				ret = data
-				wg.Done()
-				return nil
-			}
-			wg.Done()
-			return nil
-		})
-
 		rt.Ctx.Global.SetProperty("resolve", gocf.NewFunc(rt.Ctx, resolveCb))
 		rt.Ctx.Global.SetProperty("reject", gocf.NewFunc(rt.Ctx, rejectCb))
 
@@ -91,7 +92,7 @@ func main() {
 		}
 		headers := gocf.InterfaceToString(ctx.Req.Header)
 
-		exec := fmt.Sprintf("import exec from \"%s\";exec(\"%s\", %s, %s, %s, %s).then(resolve).catch(reject);", moduleName, method, query, params, body, headers)
+		exec := fmt.Sprintf("import exec from \"%s\";console.log(1111);exec(\"%s\", %s, %s, %s, %s).then(resolve).catch(reject);", moduleName, method, query, params, body, headers)
 		fmt.Println(444, exec)
 		wfb, e := rt.Ctx.Eval(exec, "<input>", 1<<0)
 
