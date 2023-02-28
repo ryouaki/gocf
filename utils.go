@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 )
 
 func InterfaceToString(value interface{}) string {
@@ -145,4 +146,18 @@ func CpFile(src string, dist string) error {
 	}
 
 	return nil
+}
+
+// 配置路径转访问路由路径
+func apiToPath(path string) string {
+	return strings.ReplaceAll(path, "/", "_")
+}
+
+func GetApiModule(method string, path string) (string, error) {
+	for _, v := range ScriptApiMap {
+		if method == v.Method && path == v.Path {
+			return v.Module, nil
+		}
+	}
+	return "", fmt.Errorf("Api not found!")
 }

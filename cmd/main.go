@@ -9,7 +9,6 @@ package main
 import "C"
 import (
 	"fmt"
-	"strings"
 	"sync"
 	"time"
 
@@ -22,15 +21,11 @@ import (
 func init() {
 	// 初始化系统插件
 	plugins.InitPlugins()
-	// 初始化JS引擎
-	gocf.InitGoCloudFunc()
-
 	gocf.DinMaster()
 }
 
 func main() {
-
-	gocf.RunAPI()
+	gocf.RunGoCF()
 	return
 
 	app := koa.New()
@@ -49,11 +44,8 @@ func main() {
 		}
 
 		var rt *gocf.JSVM
-		if strings.HasPrefix(ctx.Path, "/api/dev") {
-			rt = gocf.GetDevVM()
-		} else {
-			rt = gocf.GetVM(time.Duration(1))
-		}
+		rt = gocf.GetVM(time.Duration(1))
+
 		defer gocf.ReleaseVM(rt)
 
 		var ret interface{} = nil
