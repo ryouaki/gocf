@@ -165,7 +165,7 @@ func GetVM(ot time.Duration) *JSVM {
 				}
 			}
 			// 不能一直占用cpu，需要休眠4ms
-			time.Sleep(time.Duration(1) * time.Millisecond)
+			time.Sleep(time.Duration(4) * time.Millisecond)
 		}
 	}()
 
