@@ -1,1 +1,1 @@
-console.log("Hello world1");
+export default async function exec() {console.log("Hello world1");return {data: '1111'}}
