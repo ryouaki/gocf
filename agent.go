@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/ryouaki/koa"
 )
@@ -98,7 +99,7 @@ func doSyncScripts(ctx *koa.Context, next koa.Next) {
 	os.RemoveAll(scriptTmp)
 
 	ClearApiMap()
-	err = LoadApiScripts(scriptTmp+"/api", "/api")
+	err = LoadApiScripts(Root+"/api", "/api")
 	if err != nil {
 		ctx.Status = 500
 		ctx.SetBody(buildResp(true, "Server Error", "开发环境加载失败，请重试"))
@@ -111,6 +112,8 @@ func doSyncScripts(ctx *koa.Context, next koa.Next) {
 	// 	ctx.SetBody(buildResp(true, "Server Error", "开发环境加载失败，请重试"))
 	// 	return
 	// }
+
+	go doResetVM()
 
 	ctx.SetBody(buildResp(false, "", "文件同步成功"))
 }
@@ -130,4 +133,20 @@ func ReplaceScript(files ScriptParams, distDir string) error {
 		}
 	}
 	return nil
+}
+
+func doResetVM() {
+	updateResetFlag(true)
+
+	for len(vms) > 0 {
+		vm := vms[0]
+		if vm.IsFree {
+			vm.Ctx.Free()
+			vm.VM.Free()
+			vms = vms[1:]
+		}
+		time.Sleep(time.Duration(1) * time.Millisecond)
+	}
+	vms = make([]*JSVM, 0, 2)
+	RunGoCF()
 }

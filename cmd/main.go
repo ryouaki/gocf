@@ -44,6 +44,12 @@ func main() {
 
 		rt := gocf.GetVM(time.Duration(1))
 
+		if rt == nil {
+			ctx.Status = 500
+			ctx.SetBody([]byte("VM is busy now, Please retry again."))
+			return
+		}
+
 		defer gocf.ReleaseVM(rt)
 
 		var ret interface{} = nil

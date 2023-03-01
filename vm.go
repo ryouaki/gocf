@@ -61,6 +61,7 @@ var methods = []string{
 
 // 引擎缓存池的互斥锁
 var vmLock sync.Mutex
+var resetLock sync.Mutex
 
 // 启动引擎数量，默认1
 var Nums = 1
@@ -78,6 +79,8 @@ var pluginMap = make(map[string][]*Plugin)
 var ScriptApiMap = make([]ScriptApi, 0, 4)
 
 var MasterHost = "http://localhost:8000"
+
+var isReseting = false
 
 // 根据入参初始化参数
 func RunGoCF() {
@@ -145,6 +148,9 @@ func ReleaseVM(vm *JSVM) {
 
 // 获取可用虚拟机
 func GetVM(ot time.Duration) *JSVM {
+	if isReseting {
+		return nil
+	}
 	vmLock.Lock()         // 协程共享，需要加锁
 	defer vmLock.Unlock() // 需要释放锁
 	// 超时，不能一直查
@@ -190,6 +196,12 @@ func WaitForLoop(rt *JSVM) {
 	for C.JS_IsJobPending(rt.VM.P) > 0 {
 		C.JS_ExecutePendingJob(rt.VM.P, &rt.Ctx.P)
 	}
+}
+
+func updateResetFlag(reset bool) {
+	resetLock.Lock()
+	defer resetLock.Unlock()
+	isReseting = reset
 }
 
 // ******************** VM 初始化 End *************************
