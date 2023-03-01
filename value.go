@@ -8,6 +8,7 @@ package gocf
 */
 import "C"
 import (
+	"fmt"
 	"unsafe"
 )
 
@@ -53,6 +54,23 @@ func (val *JSValue) GetProperty(key string) *JSValue {
 	}
 }
 
+func (val *JSValue) DeleteProperty(key string) error {
+	v := NewString(val.Ctx, key)
+	defer v.Free()
+	a := C.JS_ValueToAtom(val.Ctx.P, v.P)
+	defer C.JS_FreeAtom(val.Ctx.P, a)
+	e := val.Ctx.GetException()
+	fmt.Println(e.ToString())
+
+	res := C.JS_DeleteProperty(val.Ctx.P, val.P, a, 0)
+
+	if res < 0 {
+		return fmt.Errorf("Delete " + key + " failed")
+	}
+
+	return nil
+}
+
 func (val *JSValue) SetPropertyByIndex(idx int, v *JSValue) {
 	C.JS_SetPropertyInt64(val.Ctx.P, val.P, C.int64_t(idx), v.P)
 }
@@ -90,7 +108,20 @@ func (val *JSValue) GetPropertyKeys() *JSValue {
 }
 
 func (val *JSValue) ToString() string {
+	if val == nil {
+		return ""
+	}
 	return C.GoString(C.JS_ToCString(val.Ctx.P, val.P))
+}
+
+func NewString(ctx *JSContext, key string) *JSValue {
+	cStr := C.CString(key)
+	defer C.free(unsafe.Pointer(cStr))
+
+	return &JSValue{
+		Ctx: ctx,
+		P:   C.JS_NewString(ctx.P, cStr),
+	}
 }
 
 func NewInt32(ctx *JSContext, d int) *JSValue {

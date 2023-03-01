@@ -30,6 +30,7 @@ type JSVM struct {
 type Plugin struct {
 	Name string
 	Cb   JSGoFuncHandler
+	p    *JSValue
 }
 
 type ScriptApi struct {
@@ -127,6 +128,7 @@ func newVM() *JSVM {
 				Ctx: ctx,
 				P:   NewJSGoFunc(ctx, fb.Cb).P,
 			}
+			fb.p = funcValue
 			obj.SetProperty(fb.Name, funcValue)
 		}
 		ctx.Global.SetProperty(key, obj)

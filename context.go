@@ -94,7 +94,19 @@ func (ctx *JSContext) FreeValue(val *JSValue) {
 
 // 释放Ctx
 func (ctx *JSContext) Free() {
+	// clean plugins
+	for key, pls := range pluginMap {
+		root := ctx.Global.GetProperty(key)
+		for _, fb := range pls {
+			fb.p.Free()
+			// root.DeleteProperty(fb.Name)
+		}
+		root.Free()
+		// ctx.Global.DeleteProperty(key)
+	}
+
 	ctx.FreeJSValue(ctx.InvokeFunc)
+	// fmt.Println(ctx.Global.GetPropertyKeys().ToString())
 	ctx.Global.Free()
 	_, key := ctxCache[ctx.P]
 	if key {
@@ -155,17 +167,19 @@ func NewJSGoFunc(ctx *JSContext, fb JSGoFuncHandler) *JSGoFunc {
 
 		invokeFunc = ctx.Global.GetProperty("$$invoke")
 	}
+	// defer invokeFunc.Free()
 
 	id := len(ctx.Funcs)
 	ctx.Funcs = append(ctx.Funcs, jsGoFunc) // 将自己加入到队列中
 
 	cId := NewInt32(ctx, id)
+	defer cId.Free()
 	args := []C.JSValue{
 		ctx.InvokeFunc,
 		cId.P,
 	}
 
-	jsGoFunc.P = C.JS_Call(ctx.P, invokeFunc.P, NewNull(ctx).P, 2, &args[0])
+	jsGoFunc.P = C.JS_Call(ctx.P, invokeFunc.P, C.JS_NULL, 2, &args[0])
 
 	return jsGoFunc
 }

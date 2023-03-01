@@ -26,5 +26,6 @@ cp ./libquickjs.a ../../libquickjs.a
 cd ../
 
 rm -rf ./quickjs-master
+rm -rf ./__MACOSX
 
 cd ../

@@ -92,16 +92,16 @@
  */
 //#define DUMP_BYTECODE  (1)
 /* dump the occurence of the automatic GC */
-//#define DUMP_GC
+// #define DUMP_GC
 /* dump objects freed by the garbage collector */
-//#define DUMP_GC_FREE
+// #define DUMP_GC_FREE 
 /* dump objects leaking when freeing the runtime */
 #define DUMP_LEAKS  1
 /* dump memory usage before running the garbage collector */
 //#define DUMP_MEM
-//#define DUMP_OBJECTS    /* dump objects in JS_FreeContext */
-//#define DUMP_ATOMS      /* dump atoms in JS_FreeContext */
-//#define DUMP_SHAPES     /* dump shapes in JS_FreeContext */
+// #define DUMP_OBJECTS    /* dump objects in JS_FreeContext */
+// #define DUMP_ATOMS      /* dump atoms in JS_FreeContext */
+// #define DUMP_SHAPES     /* dump shapes in JS_FreeContext */
 //#define DUMP_MODULE_RESOLVE
 //#define DUMP_PROMISE
 //#define DUMP_READ_OBJECT

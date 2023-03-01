@@ -7,6 +7,7 @@ package gocf
 #include "./quickjs-libc.h"
 */
 import "C"
+import "fmt"
 
 // 抽象的VM
 type JSRuntime struct {
@@ -22,5 +23,10 @@ func NewRuntime() *JSRuntime {
 
 // 释放VM对象。
 func (rt *JSRuntime) Free() {
+	defer func() {
+		if err := recover(); err != nil { //注意必须要判断
+			fmt.Println(err)
+		}
+	}() //用来调用此匿名函数
 	C.JS_FreeRuntime(rt.P)
 }
