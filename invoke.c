@@ -18,8 +18,8 @@ JSModuleDef* GetModule(JSContext *ctx, JSAtom module_name) {
 	JSModuleDef *m;
 	m = JS_FindLoadedModule(ctx, module_name);
 	if (m) {
-			JS_FreeAtom(ctx, module_name);
-			return m;
+		JS_FreeAtom(ctx, module_name);
+		return m;
 	}
 
 	return m;

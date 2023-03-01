@@ -95,6 +95,7 @@ func doSyncScripts(ctx *koa.Context, next koa.Next) {
 	os.MkdirAll(Root, 0750)
 
 	CopyTo(scriptTmp, Root)
+	os.RemoveAll(scriptTmp)
 
 	ClearApiMap()
 	err = LoadApiScripts(scriptTmp+"/api", "/api")

@@ -10,8 +10,6 @@ import (
 	"unsafe"
 )
 
-var ctxCache = make(map[*C.JSContext]*JSContext)
-
 type JSContext struct {
 	P          *C.JSContext
 	Funcs      []*JSGoFunc
@@ -26,6 +24,8 @@ type JSGoFunc struct {
 	Ctx *JSContext
 	Fb  JSGoFuncHandler
 }
+
+var ctxCache = make(map[*C.JSContext]*JSContext)
 
 func (rt *JSRuntime) NewContext() *JSContext {
 	ret := new(JSContext)
