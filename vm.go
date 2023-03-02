@@ -272,12 +272,12 @@ func ClearApiMap() {
 
 // 根据参数指定目录加载脚本
 func LoadApiScripts(root string, parent string) error {
-	GoCFLog(root)
+	GoCFLog("Context.LoadApiScripts", root)
 
 	// 遍历脚本文件目录
 	dir, err := ioutil.ReadDir(root)
 	if err != nil {
-		GoCFLog("Error", "Load Script file failed!")
+		GoCFLog("Context.LoadApiScripts", "Load Script file failed!")
 		return err
 	}
 
@@ -290,7 +290,7 @@ func LoadApiScripts(root string, parent string) error {
 		} else {
 			apiInfo := strings.Split(name, ".")
 			if IndexOfStringArray(methods, apiInfo[0]) == -1 {
-				GoCFLog(apiInfo[0] + " is not currect")
+				GoCFLog("Context.LoadApiScripts", apiInfo[0]+" is not currect")
 				continue
 			}
 

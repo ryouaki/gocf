@@ -1,0 +1,1 @@
+export default async function exec() {return {data: 'Hello World 2'};};

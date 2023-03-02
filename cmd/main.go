@@ -119,6 +119,6 @@ func main() {
 
 	err := app.Run(8000) // 启动
 	if err != nil {      // 是否发生错误
-		gocf.GoCFLog(err)
+		gocf.GoCFLog("Koa.Run", err)
 	}
 }

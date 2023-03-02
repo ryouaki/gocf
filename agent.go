@@ -29,7 +29,7 @@ func DinMaster() {
 		GoCFLog("Din Master failed, please restart")
 		return
 	}
-	GoCFLog(ret)
+	GoCFLog("Din", ret)
 }
 
 func InitAgent(agent *koa.Application) {

@@ -55,7 +55,7 @@ func (ctx *JSContext) Eval(script string, filename string, flag int) *JSValue {
 	r := ctx.GetException()
 	defer r.Free()
 	if r != nil {
-		GoCFLog(r.ToString())
+		GoCFLog("Context.Eval", r.ToString())
 	}
 
 	return ret
@@ -144,7 +144,7 @@ func NewJSGoFunc(ctx *JSContext, fb JSGoFuncHandler) *JSGoFunc {
 	r := ctx.GetException()
 	defer r.Free()
 	if r != nil {
-		GoCFLog(r.ToString())
+		GoCFLog("Context.NewJSGoFunc", r.ToString())
 	}
 
 	id := len(ctx.Funcs)
