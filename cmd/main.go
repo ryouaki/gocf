@@ -9,7 +9,6 @@ package main
 import "C"
 import (
 	"fmt"
-	"strings"
 	"sync"
 	"time"
 
@@ -22,16 +21,11 @@ import (
 func init() {
 	// 初始化系统插件
 	plugins.InitPlugins()
-	// 初始化JS引擎
-	gocf.InitGoCloudFunc()
-
 	gocf.DinMaster()
 }
 
 func main() {
-
-	gocf.RunAPI()
-	return
+	gocf.RunGoCF()
 
 	app := koa.New()
 
@@ -48,17 +42,33 @@ func main() {
 			return
 		}
 
-		var rt *gocf.JSVM
-		if strings.HasPrefix(ctx.Path, "/api/dev") {
-			rt = gocf.GetDevVM()
-		} else {
-			rt = gocf.GetVM(time.Duration(1))
+		rt := gocf.GetVM(time.Duration(1))
+
+		if rt == nil {
+			ctx.Status = 500
+			ctx.SetBody([]byte("VM is busy now, Please retry again."))
+			return
 		}
+
 		defer gocf.ReleaseVM(rt)
 
 		var ret interface{} = nil
 		var wg sync.WaitGroup
 		wg.Add(1)
+
+		// 实例化成功调用返回
+		rejectCb := gocf.NewJSGoFunc(rt.Ctx, func(args []*gocf.JSValue, this *gocf.JSValue) *gocf.JSValue {
+			ctx.Status = 400
+			for _, v := range args {
+				data := gocf.InterfaceToString(v)
+				ret = data
+				wg.Done()
+				return nil
+			}
+			wg.Done()
+			return nil
+		})
+
 		// 实例化成功调用返回
 		resolveCb := gocf.NewJSGoFunc(rt.Ctx, func(args []*gocf.JSValue, this *gocf.JSValue) *gocf.JSValue {
 			val := args[0]
@@ -75,21 +85,8 @@ func main() {
 			return nil
 		})
 
-		// 实例化成功调用返回
-		rejectCb := gocf.NewJSGoFunc(rt.Ctx, func(args []*gocf.JSValue, this *gocf.JSValue) *gocf.JSValue {
-			ctx.Status = 400
-			for _, v := range args {
-				data := gocf.InterfaceToString(v)
-				ret = data
-				wg.Done()
-				return nil
-			}
-			wg.Done()
-			return nil
-		})
-
-		rt.Ctx.Global.SetProperty("resolve", gocf.NewFunc(rt.Ctx, resolveCb))
-		rt.Ctx.Global.SetProperty("reject", gocf.NewFunc(rt.Ctx, rejectCb))
+		rt.Ctx.ExportFunc("resolve", resolveCb)
+		rt.Ctx.ExportFunc("reject", rejectCb)
 
 		method := ctx.Method
 		query := gocf.InterfaceToString(ctx.Query)
@@ -101,34 +98,31 @@ func main() {
 		headers := gocf.InterfaceToString(ctx.Req.Header)
 
 		exec := fmt.Sprintf("import exec from \"%s\";exec(\"%s\", %s, %s, %s, %s).then(resolve).catch(reject);", moduleName, method, query, params, body, headers)
-		fmt.Println(444, exec)
-		wfb, e := rt.Ctx.Eval(exec, "<input>", 1<<0)
+		// exec := fmt.Sprintf("import exec from \"%s\";exec().then(resolve)", moduleName)
+		fmt.Println(exec)
+		wfb := rt.Ctx.Eval(exec, "<code>", 1)
+		e := rt.Ctx.GetException()
 
 		if e != nil {
 			ctx.Status = 500
-			ctx.SetBody([]byte(e.ToString()))
-		} else
-		// 解析JS出现问题
-		if rt.Ctx.GetException() != nil {
-			r := rt.Ctx.GetException()
-			ctx.Status = 500
-			ctx.SetBody([]byte(r.ToString()))
+			if len(e.ToString()) > 0 {
+				ctx.SetBody([]byte(e.ToString()))
+			} else {
+				ctx.SetBody([]byte("VM is busy now, Please retry again."))
+			}
 		} else {
 			gocf.WaitForLoop(rt)
 			wg.Wait()
 			ctx.SetHeader("Content-Type", "application/json")
 			data := ret
 			ctx.SetBody([]byte(gocf.InterfaceToString(data)))
-			// }
 		}
-		e.Free()
 		wfb.Free()
-		// rt.Ctx.Free()
-		// rt.VM.Free()
+		e.Free()
 	})
 
 	err := app.Run(8000) // 启动
 	if err != nil {      // 是否发生错误
-		gocf.GoCFLog(err)
+		gocf.GoCFLog("Koa.Run", err)
 	}
 }

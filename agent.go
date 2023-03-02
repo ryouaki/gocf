@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/ryouaki/koa"
 )
@@ -28,26 +29,22 @@ func DinMaster() {
 		GoCFLog("Din Master failed, please restart")
 		return
 	}
-	GoCFLog(ret)
+	GoCFLog("Din", ret)
 }
 
 func InitAgent(agent *koa.Application) {
-
-	agent.Use(func(ctx *koa.Context, next koa.Next) {
-		next()
-		ctx.SetHeader("Content-Type", "application/json")
-	})
 	agent.Get("/mapi/check", doCheck)
 	agent.Post("/mapi/scripts", doSyncScripts)
-	agent.Post("/mapi/release", doRelease)
+	agent.Post("/mapi/restart", doRestart)
 }
 
 func doCheck(ctx *koa.Context, next koa.Next) {
 	ctx.SetBody(buildResp(false, "", ""))
 }
 
-func doRelease(ctx *koa.Context, next koa.Next) {
-
+func doRestart(ctx *koa.Context, next koa.Next) {
+	go doResetVM()
+	ctx.SetBody(buildResp(false, "", ""))
 }
 
 /**
@@ -81,37 +78,30 @@ func doSyncScripts(ctx *koa.Context, next koa.Next) {
 		return
 	}
 
-	scriptDevDir := strings.Replace(Root, "scripts", "scripts_dev", -1)
-	os.RemoveAll(scriptDevDir)
-	os.MkdirAll(scriptDevDir, 0750)
+	scriptTmp := strings.Replace(Root, "scripts", "scripts_tmp", -1)
+	os.RemoveAll(scriptTmp)
+	os.MkdirAll(scriptTmp, 0750)
 
 	// 拷贝文件到临时目录
-	CopyTo(Root, scriptDevDir)
+	CopyTo(Root, scriptTmp)
 
 	// 做增量覆盖
-	err = ReplaceScript(data, scriptDevDir)
+	err = ReplaceScript(data, scriptTmp)
 	if err != nil {
 		ctx.Status = 500
 		ctx.SetBody(buildResp(true, "Server Error", "解析错误，请重试"))
 		return
 	}
 
-	// 重置dev VM
-	InitDevVM()
-	ClearApiMap(true)
-	err = LoadApiScripts(scriptDevDir+"/api", true, "/api/dev")
-	if err != nil {
-		ctx.Status = 500
-		ctx.SetBody(buildResp(true, "Server Error", "开发环境加载失败，请重试"))
-		return
-	}
+	os.RemoveAll(Root)
+	os.MkdirAll(Root, 0750)
 
-	err = InitApi(true)
-	if err != nil {
-		ctx.Status = 500
-		ctx.SetBody(buildResp(true, "Server Error", "开发环境加载失败，请重试"))
-		return
-	}
+	CopyTo(scriptTmp, Root)
+	os.RemoveAll(scriptTmp)
+
+	ClearApiMap()
+
+	go doResetVM()
 
 	ctx.SetBody(buildResp(false, "", "文件同步成功"))
 }
@@ -133,27 +123,20 @@ func ReplaceScript(files ScriptParams, distDir string) error {
 	return nil
 }
 
-func buildResp(err bool, msg string, data interface{}) []byte {
-	e := ""
-	if err {
-		e = `"error":true`
-	} else {
-		e = `"error":false`
+func doResetVM() {
+	GoCFLog("doResetVM", "Restart Ok")
+	updateResetFlag(true)
+	for len(vms) > 0 {
+		vm := vms[0]
+		if vm.IsFree { // 需要等待所有处理结束后是否内存
+			vm.Ctx.Free()
+			vm.VM.Free()
+			vms = vms[1:]
+		}
+		time.Sleep(time.Duration(1) * time.Millisecond)
 	}
-
-	m := ""
-	if msg != "" {
-		m = `"msg":"` + msg + `"`
-	} else {
-		m = `"msg":""`
-	}
-
-	d := ""
-	if data != nil {
-		d = `"data":` + InterfaceToString(data)
-	} else {
-		d = `"data":null`
-	}
-
-	return []byte("{" + e + "," + m + "," + d + "}")
+	vms = vms[0:0]
+	RunGoCF()
+	updateResetFlag(false)
+	GoCFLog("doResetVM", "Restart End")
 }

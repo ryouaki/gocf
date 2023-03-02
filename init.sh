@@ -4,6 +4,7 @@ rm -rf ./quickjs.h
 rm -rf ./quickjs-libc.h
 rm -rf ./libquickjs.a
 rm -rf ./pkgs/quickjs-master
+rm -rf ./__MACOSX
 
 cd ./pkgs
 
@@ -26,5 +27,6 @@ cp ./libquickjs.a ../../libquickjs.a
 cd ../
 
 rm -rf ./quickjs-master
+rm -rf ./__MACOSX
 
 cd ../

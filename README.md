@@ -1,9 +1,11 @@
-# go-cloud-function
+# GoCF
+
+GoCF is a Golang Cloud Function Engine。Use it for business gateway。
 
 1. 用户通过mapi接口管理接口
 - 1. mapi/check 接口，监控
 - 2. mapi/scripts 接口，提交脚本进入开发环境。可以测试脚本是否正确
-- 3. mapi/release 接口，将开发脚本同步到线上环境
+- 3. mapi/restart 接口，将开发脚本同步到线上环境
 
 2. 用户通过提交js文件自动创建api接口
 - 1. api目录开头的文件会自动创建接口

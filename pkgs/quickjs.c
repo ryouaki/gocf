@@ -92,16 +92,16 @@
  */
 //#define DUMP_BYTECODE  (1)
 /* dump the occurence of the automatic GC */
-//#define DUMP_GC
+// #define DUMP_GC
 /* dump objects freed by the garbage collector */
-//#define DUMP_GC_FREE
+// #define DUMP_GC_FREE 
 /* dump objects leaking when freeing the runtime */
 #define DUMP_LEAKS  1
 /* dump memory usage before running the garbage collector */
 //#define DUMP_MEM
-//#define DUMP_OBJECTS    /* dump objects in JS_FreeContext */
-//#define DUMP_ATOMS      /* dump atoms in JS_FreeContext */
-//#define DUMP_SHAPES     /* dump shapes in JS_FreeContext */
+// #define DUMP_OBJECTS    /* dump objects in JS_FreeContext */
+// #define DUMP_ATOMS      /* dump atoms in JS_FreeContext */
+// #define DUMP_SHAPES     /* dump shapes in JS_FreeContext */
 //#define DUMP_MODULE_RESOLVE
 //#define DUMP_PROMISE
 //#define DUMP_READ_OBJECT
@@ -1960,6 +1960,7 @@ void JS_FreeRuntime(JSRuntime *rt)
         list_for_each(el, &rt->gc_obj_list) {
             p = list_entry(el, JSGCObjectHeader, link);
             if (p->ref_count != 0) {
+                printf("ref_count %d, %d\n", p->ref_count, p->gc_obj_type);
                 if (!header_done) {
                     printf("Object leaks:\n");
                     JS_DumpObjectHeader(rt);
@@ -2656,9 +2657,11 @@ static JSAtomKindEnum JS_AtomGetKind(JSContext *ctx, JSAtom v)
         case JS_ATOM_HASH_PRIVATE:
             return JS_ATOM_KIND_PRIVATE;
         default:
+            printf("abort %s", "JS_AtomGetKind 1");
             abort();
         }
     default:
+        printf("abort %s", "JS_AtomGetKind2 ");
         abort();
     }
 }
@@ -5449,6 +5452,7 @@ static void free_gc_object(JSRuntime *rt, JSGCObjectHeader *gp)
         free_function_bytecode(rt, (JSFunctionBytecode *)gp);
         break;
     default:
+        printf("abort %s", "free_gc_object");
         abort();
     }
 }
@@ -5515,6 +5519,7 @@ void __JS_FreeValueRT(JSRuntime *rt, JSValue v)
         }
         break;
     case JS_TAG_MODULE:
+        printf("abort %s", "__JS_FreeValueRT");
         abort(); /* never freed here */
         break;
 #ifdef CONFIG_BIGNUM
@@ -5671,6 +5676,7 @@ static void mark_children(JSRuntime *rt, JSGCObjectHeader *gp,
         }
         break;
     default:
+        printf("abort %s %d", "mark_children", gp->gc_obj_type);
         abort();
     }
 }

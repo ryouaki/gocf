@@ -10,14 +10,22 @@ import (
 	"unsafe"
 )
 
-var ctxCache = make(map[*C.JSContext]*JSContext)
-
 type JSContext struct {
 	P          *C.JSContext
 	Funcs      []*JSGoFunc
 	InvokeFunc C.JSValue // 注入调用go函数的sdk api
 	Global     *JSValue
 }
+
+type JSGoFuncHandler func(args []*JSValue, this *JSValue) *JSValue
+
+type JSGoFunc struct {
+	P   C.JSValue
+	Ctx *JSContext
+	Fb  JSGoFuncHandler
+}
+
+var ctxCache = make(map[*C.JSContext]*JSContext)
 
 func (rt *JSRuntime) NewContext() *JSContext {
 	ret := new(JSContext)
@@ -32,7 +40,7 @@ func (rt *JSRuntime) NewContext() *JSContext {
 	return ret
 }
 
-func (ctx *JSContext) Eval(script string, filename string, flag int) (*JSValue, *JSValue) {
+func (ctx *JSContext) Eval(script string, filename string, flag int) *JSValue {
 	jsStr := C.CString(script)          // 将JS文本代码转换为quickjs引擎代码格式
 	defer C.free(unsafe.Pointer(jsStr)) // 执行结束后需要释放空间
 
@@ -44,12 +52,13 @@ func (ctx *JSContext) Eval(script string, filename string, flag int) (*JSValue, 
 		P:   C.JS_Eval(ctx.P, jsStr, jsStrLen, jsFileName, C.int(flag)),
 		Ctx: ctx,
 	}
-
-	err := ctx.GetException()
-	if err != nil {
-		return nil, err
+	r := ctx.GetException()
+	defer r.Free()
+	if r != nil {
+		GoCFLog("Context.Eval", r.ToString())
 	}
-	return ret, nil
+
+	return ret
 }
 
 func (ctx *JSContext) GetException() *JSValue {
@@ -86,6 +95,7 @@ func (ctx *JSContext) FreeValue(val *JSValue) {
 
 // 释放Ctx
 func (ctx *JSContext) Free() {
+	// clean plugins
 	ctx.FreeJSValue(ctx.InvokeFunc)
 	ctx.Global.Free()
 	_, key := ctxCache[ctx.P]
@@ -105,4 +115,61 @@ func (ctx *JSContext) FindModule(name string) bool {
 	} else {
 		return false
 	}
+}
+
+func NewJSGoFunc(ctx *JSContext, fb JSGoFuncHandler) *JSGoFunc {
+	jsGoFunc := new(JSGoFunc)
+	jsGoFunc.Ctx = ctx
+	jsGoFunc.Fb = fb
+
+	// 注入bridge
+	ws := `(invoke, id) => function () {
+		var argvs = [id]
+		for (var i = 0; i < arguments.length; i++) {
+			var argv = arguments[i];
+			argvs.push(argv)
+		}
+		var ret = invoke.apply(this, argvs);
+		try {
+			objData = JSON.parse(ret.data)
+			ret.data = objData
+		} catch(e) {}
+		return ret
+	};`
+
+	// 这个执行后会返回一个函数的引用。
+	wfb := ctx.Eval(ws, "<code>", 0)
+	defer wfb.Free()
+
+	r := ctx.GetException()
+	defer r.Free()
+	if r != nil {
+		GoCFLog("Context.NewJSGoFunc", r.ToString())
+	}
+
+	id := len(ctx.Funcs)
+	ctx.Funcs = append(ctx.Funcs, jsGoFunc) // 将自己加入到队列中
+
+	cId := NewInt32(ctx, id)
+	defer cId.Free()
+	args := []C.JSValue{
+		ctx.InvokeFunc,
+		cId.P,
+	}
+
+	jsGoFunc.P = C.JS_Call(ctx.P, wfb.P, C.JS_NULL, 2, &args[0])
+
+	return jsGoFunc
+}
+
+func MakeInvokeResult(ctx *JSContext, status int, val interface{}) *JSValue {
+	data := InterfaceToString(val)
+	cStr := C.CString(data)
+	defer C.free(unsafe.Pointer(cStr))
+	cVal := C.JS_NewString(ctx.P, cStr)
+	ret := NewObject(ctx)
+	ret.SetProperty("error", NewValue(ctx, C.JS_NewBool(ctx.P, C.int(status))))
+	ret.SetProperty("data", NewValue(ctx, cVal))
+
+	return ret
 }

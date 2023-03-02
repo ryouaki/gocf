@@ -22,3 +22,4 @@ __debug_bin
 /gocf/bin
 .DS_Store
 scripts_dev
+*.js

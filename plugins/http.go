@@ -17,9 +17,10 @@ func initHttp() []*gocf.Plugin {
 		// }
 
 		// http.NewRequest(method.ToString(), uri.ToString())
-		v := make(map[string]string)
-		v["a"] = "aaaaa"
-		return gocf.MakeInvokeResult(this.Ctx, gocf.CB_SUCCESS, "aaaaaa")
+		// v := make(map[string]string)
+		// v["a"] = "aaaaa"
+		// return gocf.MakeInvokeResult(this.Ctx, gocf.CB_SUCCESS, "aaaaaa")
+		return nil
 	})
 
 	plugins = append(plugins, plugin)
