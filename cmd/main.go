@@ -105,7 +105,11 @@ func main() {
 
 		if e != nil {
 			ctx.Status = 500
-			ctx.SetBody([]byte(e.ToString()))
+			if len(e.ToString()) > 0 {
+				ctx.SetBody([]byte(e.ToString()))
+			} else {
+				ctx.SetBody([]byte("VM is busy now, Please retry again."))
+			}
 		} else {
 			gocf.WaitForLoop(rt)
 			wg.Wait()

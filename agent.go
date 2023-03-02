@@ -124,8 +124,8 @@ func ReplaceScript(files ScriptParams, distDir string) error {
 }
 
 func doResetVM() {
+	GoCFLog("doResetVM", "Restart Ok")
 	updateResetFlag(true)
-
 	for len(vms) > 0 {
 		vm := vms[0]
 		if vm.IsFree { // 需要等待所有处理结束后是否内存
@@ -135,7 +135,8 @@ func doResetVM() {
 		}
 		time.Sleep(time.Duration(1) * time.Millisecond)
 	}
-	vms = make([]*JSVM, 0, 2)
+	vms = vms[0:0]
 	RunGoCF()
 	updateResetFlag(false)
+	GoCFLog("doResetVM", "Restart End")
 }
