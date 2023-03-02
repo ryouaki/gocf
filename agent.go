@@ -43,7 +43,8 @@ func doCheck(ctx *koa.Context, next koa.Next) {
 }
 
 func doRestart(ctx *koa.Context, next koa.Next) {
-
+	go doResetVM()
+	ctx.SetBody(buildResp(false, "", ""))
 }
 
 /**
