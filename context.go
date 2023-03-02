@@ -54,6 +54,8 @@ func (ctx *JSContext) Eval(script string, filename string, flag int) (*JSValue, 
 	}
 
 	err := ctx.GetException()
+	defer err.Free()
+
 	if err != nil {
 		return nil, err
 	}
@@ -95,6 +97,7 @@ func (ctx *JSContext) FreeValue(val *JSValue) {
 // 释放Ctx
 func (ctx *JSContext) Free() {
 	// clean plugins
+	ctx.Funcs = ctx.Funcs[0:0]
 	for key, pls := range pluginMap {
 		root := ctx.Global.GetProperty(key)
 		for _, fb := range pls {
@@ -152,17 +155,18 @@ func NewJSGoFunc(ctx *JSContext, fb JSGoFuncHandler) *JSGoFunc {
 		};`
 
 		// 这个执行后会返回一个函数的引用。
-		wfb, e := ctx.Eval(ws, "<input>", 1<<0)
+		wfb, e := ctx.Eval(ws, "<code>", 1<<0)
 		defer wfb.Free()
 		defer e.Free()
 
-		if ctx.GetException() != nil {
-			r := ctx.GetException()
-			GoCFLog(r.ToString())
-		}
-
 		if e != nil {
 			GoCFLog(e.ToString())
+		}
+
+		r := ctx.GetException()
+		if r != nil {
+			GoCFLog(r.ToString())
+			r.Free()
 		}
 
 		invokeFunc = ctx.Global.GetProperty("$$invoke")

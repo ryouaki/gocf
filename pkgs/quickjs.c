@@ -1960,6 +1960,12 @@ void JS_FreeRuntime(JSRuntime *rt)
         list_for_each(el, &rt->gc_obj_list) {
             p = list_entry(el, JSGCObjectHeader, link);
             if (p->ref_count != 0) {
+                printf("ref_count %d, %d\n", p->ref_count, p->gc_obj_type);
+                if (p->gc_obj_type == JS_GC_OBJ_TYPE_JS_OBJECT) {
+                    JS_DumpObject(rt, (JSObject *)p);
+                    JSObject* o = (JSObject *)p;
+                    // printf("ttt %s\n", JS_AtomGetStrRT(rt, buf, sizeof(buf), b->func_name));
+                }
                 if (!header_done) {
                     printf("Object leaks:\n");
                     JS_DumpObjectHeader(rt);
@@ -8804,6 +8810,7 @@ int JS_SetPropertyInt64(JSContext *ctx, JSValueConst this_obj,
 int JS_SetPropertyStr(JSContext *ctx, JSValueConst this_obj,
                       const char *prop, JSValue val)
 {
+    printf("New Object %s", prop);
     JSAtom atom;
     int ret;
     atom = JS_NewAtom(ctx, prop);

@@ -136,6 +136,20 @@ func init() {
 func main() {
 	gocf.RunGoCF()
 	rt := gocf.GetVM(time.Duration(1))
+	resolveCb := gocf.NewJSGoFunc(rt.Ctx, func(args []*gocf.JSValue, this *gocf.JSValue) *gocf.JSValue {
+		return nil
+	})
+	// rt.Ctx.ExportFunc("resolve", resolveCb)
+	// names := rt.Ctx.Global.GetPropertyKeys()
+	// rt.Ctx.Funcs = rt.Ctx.Funcs[0:0]
+	// for _, name := range names {
+	// 	fmt.Println(name.ToString())
+	// 	v := rt.Ctx.Global.GetProperty(name.ToString())
+	// 	v.Free()
+	// }
+	// invokeFunc := rt.Ctx.Global.GetProperty("$$invoke")
+	// rt.Ctx.FreeJSValue(invokeFunc.P)
+	rt.Ctx.FreeJSValue(resolveCb.P)
 	rt.Ctx.Free()
 	rt.VM.Free()
 }

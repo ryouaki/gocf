@@ -4,6 +4,7 @@ rm -rf ./quickjs.h
 rm -rf ./quickjs-libc.h
 rm -rf ./libquickjs.a
 rm -rf ./pkgs/quickjs-master
+rm -rf ./__MACOSX
 
 cd ./pkgs
 

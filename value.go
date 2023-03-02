@@ -60,8 +60,7 @@ func (val *JSValue) DeleteProperty(key string) error {
 	a := C.JS_ValueToAtom(val.Ctx.P, v.P)
 	defer C.JS_FreeAtom(val.Ctx.P, a)
 	e := val.Ctx.GetException()
-	fmt.Println(e.ToString())
-
+	defer e.Free()
 	res := C.JS_DeleteProperty(val.Ctx.P, val.P, a, 0)
 
 	if res < 0 {
@@ -82,7 +81,7 @@ func (val *JSValue) GetPropertyByIndex(idx int) *JSValue {
 	}
 }
 
-func (val *JSValue) GetPropertyKeys() *JSValue {
+func (val *JSValue) GetPropertyKeys() []*JSValue {
 	var (
 		ptr  *C.JSPropertyEnum
 		size C.uint32_t
@@ -90,18 +89,19 @@ func (val *JSValue) GetPropertyKeys() *JSValue {
 
 	result := int(C.JS_GetOwnPropertyNames(val.Ctx.P, &ptr, &size, val.P, C.int(1<<0|1<<1|1<<2)))
 	if result < 0 {
-		return NewArray(val.Ctx)
+		return []*JSValue{}
 	}
 	defer C.js_free(val.Ctx.P, unsafe.Pointer(ptr))
 
 	entries := (*[1 << unsafe.Sizeof(0)]C.JSPropertyEnum)(unsafe.Pointer(ptr))
 
-	names := NewArray(val.Ctx)
+	names := make([]*JSValue, size)
 
 	for i := 0; C.uint32_t(i) < size; i++ {
 		v := NewValue(val.Ctx, C.JS_AtomToValue(val.Ctx.P, entries[i].atom))
+		names[i] = v
+		v.Free()
 		C.JS_FreeAtom(val.Ctx.P, entries[i].atom)
-		names.SetPropertyByIndex(i, v)
 	}
 
 	return names
