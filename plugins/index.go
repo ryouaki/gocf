@@ -3,7 +3,7 @@ package plugins
 import "github.com/ryouaki/gocf"
 
 func InitPlugins() {
-	// gocf.RegistPlugin("console", initConsole())
+	gocf.RegistPlugin("console", initConsole())
 	// gocf.RegistPlugin("http", initHttp())
 }
 

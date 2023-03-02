@@ -99,19 +99,6 @@ func doSyncScripts(ctx *koa.Context, next koa.Next) {
 	os.RemoveAll(scriptTmp)
 
 	ClearApiMap()
-	err = LoadApiScripts(Root+"/api", "/api")
-	if err != nil {
-		ctx.Status = 500
-		ctx.SetBody(buildResp(true, "Server Error", "开发环境加载失败，请重试"))
-		return
-	}
-
-	// err = InitApi()
-	// if err != nil {
-	// 	ctx.Status = 500
-	// 	ctx.SetBody(buildResp(true, "Server Error", "开发环境加载失败，请重试"))
-	// 	return
-	// }
 
 	go doResetVM()
 
@@ -141,8 +128,6 @@ func doResetVM() {
 	for len(vms) > 0 {
 		vm := vms[0]
 		if vm.IsFree { // 需要等待所有处理结束后是否内存
-			// r := vm.Ctx.Global.GetPropertyKeys()
-			// fmt.Println("test", r.ToString())
 			vm.Ctx.Free()
 			vm.VM.Free()
 			vms = vms[1:]

@@ -1961,11 +1961,6 @@ void JS_FreeRuntime(JSRuntime *rt)
             p = list_entry(el, JSGCObjectHeader, link);
             if (p->ref_count != 0) {
                 printf("ref_count %d, %d\n", p->ref_count, p->gc_obj_type);
-                if (p->gc_obj_type == JS_GC_OBJ_TYPE_JS_OBJECT) {
-                    JS_DumpObject(rt, (JSObject *)p);
-                    JSObject* o = (JSObject *)p;
-                    // printf("ttt %s\n", JS_AtomGetStrRT(rt, buf, sizeof(buf), b->func_name));
-                }
                 if (!header_done) {
                     printf("Object leaks:\n");
                     JS_DumpObjectHeader(rt);
@@ -2662,9 +2657,11 @@ static JSAtomKindEnum JS_AtomGetKind(JSContext *ctx, JSAtom v)
         case JS_ATOM_HASH_PRIVATE:
             return JS_ATOM_KIND_PRIVATE;
         default:
+            printf("abort %s", "JS_AtomGetKind 1");
             abort();
         }
     default:
+        printf("abort %s", "JS_AtomGetKind2 ");
         abort();
     }
 }
@@ -5455,6 +5452,7 @@ static void free_gc_object(JSRuntime *rt, JSGCObjectHeader *gp)
         free_function_bytecode(rt, (JSFunctionBytecode *)gp);
         break;
     default:
+        printf("abort %s", "free_gc_object");
         abort();
     }
 }
@@ -5521,6 +5519,7 @@ void __JS_FreeValueRT(JSRuntime *rt, JSValue v)
         }
         break;
     case JS_TAG_MODULE:
+        printf("abort %s", "__JS_FreeValueRT");
         abort(); /* never freed here */
         break;
 #ifdef CONFIG_BIGNUM
@@ -5677,6 +5676,7 @@ static void mark_children(JSRuntime *rt, JSGCObjectHeader *gp,
         }
         break;
     default:
+        printf("abort %s %d", "mark_children", gp->gc_obj_type);
         abort();
     }
 }
@@ -8810,7 +8810,6 @@ int JS_SetPropertyInt64(JSContext *ctx, JSValueConst this_obj,
 int JS_SetPropertyStr(JSContext *ctx, JSValueConst this_obj,
                       const char *prop, JSValue val)
 {
-    printf("New Object %s", prop);
     JSAtom atom;
     int ret;
     atom = JS_NewAtom(ctx, prop);

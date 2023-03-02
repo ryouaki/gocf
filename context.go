@@ -40,7 +40,7 @@ func (rt *JSRuntime) NewContext() *JSContext {
 	return ret
 }
 
-func (ctx *JSContext) Eval(script string, filename string, flag int) (*JSValue, *JSValue) {
+func (ctx *JSContext) Eval(script string, filename string, flag int) *JSValue {
 	jsStr := C.CString(script)          // 将JS文本代码转换为quickjs引擎代码格式
 	defer C.free(unsafe.Pointer(jsStr)) // 执行结束后需要释放空间
 
@@ -52,14 +52,13 @@ func (ctx *JSContext) Eval(script string, filename string, flag int) (*JSValue, 
 		P:   C.JS_Eval(ctx.P, jsStr, jsStrLen, jsFileName, C.int(flag)),
 		Ctx: ctx,
 	}
-
-	err := ctx.GetException()
-	defer err.Free()
-
-	if err != nil {
-		return nil, err
+	r := ctx.GetException()
+	defer r.Free()
+	if r != nil {
+		GoCFLog(r.ToString())
 	}
-	return ret, nil
+
+	return ret
 }
 
 func (ctx *JSContext) GetException() *JSValue {
@@ -97,19 +96,7 @@ func (ctx *JSContext) FreeValue(val *JSValue) {
 // 释放Ctx
 func (ctx *JSContext) Free() {
 	// clean plugins
-	ctx.Funcs = ctx.Funcs[0:0]
-	for key, pls := range pluginMap {
-		root := ctx.Global.GetProperty(key)
-		for _, fb := range pls {
-			fb.p.Free()
-			// root.DeleteProperty(fb.Name)
-		}
-		root.Free()
-		// ctx.Global.DeleteProperty(key)
-	}
-
 	ctx.FreeJSValue(ctx.InvokeFunc)
-	// fmt.Println(ctx.Global.GetPropertyKeys().ToString())
 	ctx.Global.Free()
 	_, key := ctxCache[ctx.P]
 	if key {
@@ -135,43 +122,30 @@ func NewJSGoFunc(ctx *JSContext, fb JSGoFuncHandler) *JSGoFunc {
 	jsGoFunc.Ctx = ctx
 	jsGoFunc.Fb = fb
 
-	invokeFunc := ctx.Global.GetProperty("$$invoke")
-	if invokeFunc == nil || !invokeFunc.IsFunction() {
-		// 注入bridge
-		ws := `globalThis.$$invoke = function (invoke, id) {
-			return function () {
-				var argvs = [id]
-				for (var i = 0; i < arguments.length; i++) {
-					var argv = arguments[i];
-					argvs.push(argv)
-				}
-				var ret = invoke.apply(this, argvs);
-				try {
-					objData = JSON.parse(ret.data)
-					ret.data = objData
-				} catch(e) {}
-				return ret
-			}
-		};`
-
-		// 这个执行后会返回一个函数的引用。
-		wfb, e := ctx.Eval(ws, "<code>", 1<<0)
-		defer wfb.Free()
-		defer e.Free()
-
-		if e != nil {
-			GoCFLog(e.ToString())
+	// 注入bridge
+	ws := `(invoke, id) => function () {
+		var argvs = [id]
+		for (var i = 0; i < arguments.length; i++) {
+			var argv = arguments[i];
+			argvs.push(argv)
 		}
+		var ret = invoke.apply(this, argvs);
+		try {
+			objData = JSON.parse(ret.data)
+			ret.data = objData
+		} catch(e) {}
+		return ret
+	};`
 
-		r := ctx.GetException()
-		if r != nil {
-			GoCFLog(r.ToString())
-			r.Free()
-		}
+	// 这个执行后会返回一个函数的引用。
+	wfb := ctx.Eval(ws, "<code>", 0)
+	defer wfb.Free()
 
-		invokeFunc = ctx.Global.GetProperty("$$invoke")
+	r := ctx.GetException()
+	defer r.Free()
+	if r != nil {
+		GoCFLog(r.ToString())
 	}
-	// defer invokeFunc.Free()
 
 	id := len(ctx.Funcs)
 	ctx.Funcs = append(ctx.Funcs, jsGoFunc) // 将自己加入到队列中
@@ -183,7 +157,7 @@ func NewJSGoFunc(ctx *JSContext, fb JSGoFuncHandler) *JSGoFunc {
 		cId.P,
 	}
 
-	jsGoFunc.P = C.JS_Call(ctx.P, invokeFunc.P, C.JS_NULL, 2, &args[0])
+	jsGoFunc.P = C.JS_Call(ctx.P, wfb.P, C.JS_NULL, 2, &args[0])
 
 	return jsGoFunc
 }

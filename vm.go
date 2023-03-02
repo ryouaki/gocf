@@ -243,13 +243,9 @@ func InitApi() error {
 }
 
 func buildModule(m *JSVM, code string, name string) error {
-	_, err := m.Ctx.Eval(code, name, 1<<0|1<<5)
-	defer err.Free()
+	m.Ctx.Eval(code, name, 1<<0|1<<5)
 
-	if err != nil {
-		return fmt.Errorf(err.ToString())
-	}
-	err = m.Ctx.GetException()
+	err := m.Ctx.GetException()
 	if err != nil {
 		return fmt.Errorf(err.ToString())
 	}
