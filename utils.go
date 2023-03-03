@@ -179,7 +179,7 @@ func buildResp(err bool, msg string, data interface{}) []byte {
 
 	d := ""
 	if data != nil {
-		d = `"data":` + InterfaceToString(data)
+		d = `"data":\"` + InterfaceToString(data) + "\""
 	} else {
 		d = `"data":null`
 	}
