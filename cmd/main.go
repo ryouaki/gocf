@@ -103,13 +103,9 @@ func main() {
 		wfb := rt.Ctx.Eval(exec, "<code>", 1)
 		e := rt.Ctx.GetException()
 
-		if e != nil {
+		if e != nil && len(e.ToString()) > 0 {
 			ctx.Status = 500
-			if len(e.ToString()) > 0 {
-				ctx.SetBody([]byte(e.ToString()))
-			} else {
-				ctx.SetBody([]byte("VM is busy now, Please retry again."))
-			}
+			ctx.SetBody([]byte(e.ToString()))
 		} else {
 			gocf.WaitForLoop(rt)
 			wg.Wait()
